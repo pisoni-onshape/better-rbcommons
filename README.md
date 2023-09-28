@@ -23,7 +23,7 @@ A simple userscript that adds some useful little features to RBCommons.com websi
 
     <img width="200" alt="image" src="https://github.com/pisoni-onshape/better-rbcommons/assets/87058498/128d807d-7855-4cc1-b043-e0b112d614d4">
 
-3. Click on https://github.com/pisoni-onshape/better-rbcommons/raw/main/Better%20RBCommons.user.js to install the current version of the Better RBCommons script. You can now use RBCommons as before and it should add some features in a non-intrusive way. 
+3. Click on https://github.com/pisoni-onshape/better-rbcommons/raw/main/Better%20RBCommons.user.js to install the current version of the Better RBCommons script. You can now use RBCommons as before and it should add these features in a non-intrusive way. 
 
 
 ## Adjustments:
