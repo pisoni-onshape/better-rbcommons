@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Better RBCommons
 // @namespace    piyushsoni
-// @version      1.0
+// @version      1.2
 // @description  Add some useful little features to RBCommons.com website to work around its common annoyances.
 // @author       Piyush Soni
 // @match        https://rbcommons.com/*
@@ -9,6 +9,10 @@
 // @grant        GM_registerMenuCommand
 // @grant        GM_getValue
 // @grant        GM_setValue
+// @grant        GM_addStyle
+// @grant        GM_getResourceURL
+// @resource     github-icon https://raw.githubusercontent.com/pisoni-onshape/better-rbcommons/main/Github-icon.png
+// @resource     vscode-icon https://raw.githubusercontent.com/pisoni-onshape/better-rbcommons/main/VSCode-icon.png
 // ==/UserScript==
 
 (function() {
@@ -34,10 +38,55 @@
         });
     }
 
+    function getFromGMOrAsk(key, failValue, message) {
+        let value = GM_getValue(key, failValue);
+        if(value == failValue)
+        {
+            value = prompt(message);
+            if(value != failValue)
+                GM_setValue(key, value);
+        }
+        return value;
+    }
+
+    //'github-icon', 'Open the file in Github', fullGithubPath, newDiv
+    function createIconLink(iconResourceName, title, fullPath, parentDiv, openInNewTab) {
+        parentDiv.appendChild(document.createTextNode('  '));
+
+        let newIcon = document.createElement('img');
+        let newIconURL = GM_getResourceURL(iconResourceName);
+        newIcon.src = newIconURL;
+        newIcon.style.width = '12px';
+        newIcon.style.height = '12px';
+        newIcon.style.verticalAlign = 'middle';
+        newIcon.title = title;
+
+        const newLink = document.createElement('a');
+        if (openInNewTab) {
+            newLink.target = '_blank';
+        }
+        newLink.appendChild(newIcon);
+        newLink.href = fullPath;
+        parentDiv.appendChild(newLink);
+    }
+
+    function getFullVSCodePath(filePath) {
+        const newtonPath = getFromGMOrAsk('baseNewtonDirectoryPath', '', 'Please enter your base newton directory path on the local machine: e.g. /Users/<home-dir>/repos/newton');
+        if (!newtonPath) {
+            return null;
+        }
+
+        return "vscode://file/" + (newtonPath + '/').replace('//','/') + filePath;
+    }
+
     function mainDiffPage() {
         // functions relevant only to the Diff Page
 
         let lastFileOnTop = null;
+
+        function addFileNameAtTopStyle() {
+            GM_addStyle(".filename-at-top-div { z-index: 999; position: fixed; opacity: 1; background-color: #EEDDDD; top: 0px; left: 0px; border: 1px solid; border-color: #AB7E7E; padding: 3px; border-radius: 2px; box-shadow: 1px 1px lightgrey; }");
+        }
 
         function getTableUnderMouse() {
             var hoveredItems = document.querySelectorAll(":hover");
@@ -59,15 +108,21 @@
         }
 
         function activateFileNamesAtTheTop() {
-            function createFixedAtTopDiv(id, innerText) {
+            addFileNameAtTopStyle();
+            function createFixedAtTopDiv(id, filePath) {
                 let newDiv = document.createElement('div');
                 newDiv.id = id;
-                newDiv.innerHTML = innerText;
-                newDiv.style.zIndex = "999";
-                newDiv.style.position = "fixed";
-                newDiv.style.opacity = "1";
-                newDiv.style.backgroundColor = "#EEDDDD";
-                newDiv.style.top = "0";
+                newDiv.innerHTML = filePath;
+                newDiv.classList.add("filename-at-top-div");
+
+                // Create the github button
+                const fullGithubPath = "https://github.com/onshape/newton/blob/master/" + filePath;
+                createIconLink('github-icon', 'Open the file in Github', fullGithubPath, newDiv, true);
+
+                // Create the vscode button
+                const fullVSCodePath = getFullVSCodePath(filePath);
+                createIconLink('vscode-icon', 'Open the file in VS Code', fullVSCodePath, newDiv, false);
+
                 document.body.appendChild(newDiv);
                 return newDiv;
             }
@@ -369,11 +424,14 @@
 
     // Main code begins here.
     let url = new String(window.top.location.href).toLowerCase();
+
+    // Functions that will execute on all pages
+    mainAllPages();
+
+    // Functions that will execute only on the 'diff' pages.
     if (url.indexOf('/diff/') > 0) {
       // All functions applicable to the Diff Viewer page of RBCommons
       mainDiffPage();
     }
-
-    mainAllPages();
 
 })();
