@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Better RBCommons
 // @namespace    piyushsoni
-// @version      1.2
+// @version      1.3
 // @description  Add some useful little features to RBCommons.com website to work around its common annoyances.
 // @author       Piyush Soni
 // @match        https://rbcommons.com/*
@@ -85,7 +85,7 @@
         let lastFileOnTop = null;
 
         function addFileNameAtTopStyle() {
-            GM_addStyle(".filename-at-top-div { z-index: 999; position: fixed; opacity: 1; background-color: #EEDDDD; top: 0px; left: 0px; border: 1px solid; border-color: #AB7E7E; padding: 3px; border-radius: 2px; box-shadow: 1px 1px lightgrey; }");
+            GM_addStyle(".filename-at-top-div { z-index: 999; position: fixed; opacity: 1; background-color: #EEDDDD; top: 0px; left: 0px; border: 1px solid; border-color: #AB7E7E; padding-left: 3px; padding-right: 3px; border-radius: 2px; box-shadow: 1px 1px lightgrey; }");
         }
 
         function getTableUnderMouse() {
@@ -94,7 +94,7 @@
                 return null;
             }
 
-            var currentElement  = hoveredItems[hoveredItems.length - 1];
+            var currentElement = hoveredItems[hoveredItems.length - 1];
 
             while (currentElement !== null) {
                 if (currentElement.tagName.toLowerCase() === 'table') {
