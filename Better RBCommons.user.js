@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Better RBCommons
 // @namespace    piyushsoni
-// @version      1.3
+// @version      1.5
 // @description  Add some useful little features to RBCommons.com website to work around its common annoyances.
 // @author       Piyush Soni
 // @match        https://rbcommons.com/*
@@ -51,6 +51,15 @@
 
     //'github-icon', 'Open the file in Github', fullGithubPath, newDiv
     function createIconLink(iconResourceName, title, fullPath, parentDiv, openInNewTab) {
+        if (!parentDiv) {
+            return;
+        }
+
+        if (parentDiv.querySelector('a[name="' + iconResourceName + '"]')) {
+            // Already exists.
+            return;
+        }
+
         parentDiv.appendChild(document.createTextNode('  '));
 
         let newIcon = document.createElement('img');
@@ -65,18 +74,23 @@
         if (openInNewTab) {
             newLink.target = '_blank';
         }
+        newLink.name = iconResourceName;
         newLink.appendChild(newIcon);
         newLink.href = fullPath;
+        newLink.addEventListener('click', function(event) { event.stopPropagation(); });
         parentDiv.appendChild(newLink);
     }
 
+    function getVSCodeBasePath() {
+        return getFromGMOrAsk('baseNewtonDirectoryPath', null, 'Please enter your base newton directory path on the local machine: e.g. /Users/<home-dir>/repos/newton');
+    }
+
     function getFullVSCodePath(filePath) {
-        const newtonPath = getFromGMOrAsk('baseNewtonDirectoryPath', '', 'Please enter your base newton directory path on the local machine: e.g. /Users/<home-dir>/repos/newton');
+        const newtonPath = getVSCodeBasePath();
         if (!newtonPath) {
             return null;
         }
-
-        return "vscode://file/" + (newtonPath + '/').replace('//','/') + filePath;
+        return "vscode://" + ("file/" + newtonPath + '/').replace('//','/') + filePath;
     }
 
     function mainDiffPage() {
@@ -109,19 +123,24 @@
 
         function activateFileNamesAtTheTop() {
             addFileNameAtTopStyle();
+
+            function addIconLinks(filePath, parentElement) {
+                // Create the github button
+                const fullGithubPath = "https://github.com/onshape/newton/blob/master/" + filePath;
+                createIconLink('github-icon', 'Open the file in Github', fullGithubPath, parentElement, true);
+
+                // Create the vscode button
+                const fullVSCodePath = getFullVSCodePath(filePath);
+                createIconLink('vscode-icon', 'Open the file in VS Code', fullVSCodePath, parentElement, false);
+            }
+
             function createFixedAtTopDiv(id, filePath) {
                 let newDiv = document.createElement('div');
                 newDiv.id = id;
                 newDiv.innerHTML = filePath;
                 newDiv.classList.add("filename-at-top-div");
 
-                // Create the github button
-                const fullGithubPath = "https://github.com/onshape/newton/blob/master/" + filePath;
-                createIconLink('github-icon', 'Open the file in Github', fullGithubPath, newDiv, true);
-
-                // Create the vscode button
-                const fullVSCodePath = getFullVSCodePath(filePath);
-                createIconLink('vscode-icon', 'Open the file in VS Code', fullVSCodePath, newDiv, false);
+                addIconLinks(filePath, newDiv);
 
                 document.body.appendChild(newDiv);
                 return newDiv;
@@ -159,6 +178,11 @@
                     if (!filenameRow.nextElementSibling) {
                         continue;
                     }
+
+                    const filePath = filenameRow.innerText;
+                    const elementToAddIcons = filenameRow.firstElementChild;
+
+                    addIconLinks(filePath, elementToAddIcons);
 
                     const fileRevisionRowRect = filenameRow.nextElementSibling.getBoundingClientRect();
                     const fileRevisionRowIsAboveTheView = fileRevisionRowRect.top < 0;
@@ -354,6 +378,18 @@
 
         GM_registerMenuCommand((resizeDiffColumnsEnabled ? 'Disable ' : 'Enable ') + 'Resizing Diff Columns', () => {
             GM_setValue('resizeDiffColumnsEnabled', !GM_getValue('resizeDiffColumnsEnabled', true));
+            window.location.reload();
+        });
+
+        GM_registerMenuCommand('Set VS Code Newton Path', () => {
+            // Clear the existing value if any
+            const previousValue = GM_getValue('baseNewtonDirectoryPath', '');
+            GM_setValue('baseNewtonDirectoryPath', null);
+            const currentValue = getVSCodeBasePath();
+            if (previousValue != '' && currentValue == null) {
+                // User has cancelled the input. In that case, let's set it again to the previous value.
+                GM_setValue('baseNewtonDirectoryPath', previousValue);
+            }
             window.location.reload();
         });
     }
