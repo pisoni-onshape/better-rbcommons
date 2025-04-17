@@ -1,22 +1,29 @@
 // ==UserScript==
 // @name         Better RBCommons
 // @namespace    piyushsoni
-// @version      1.5
+// @version      1.6
 // @description  Add some useful little features to RBCommons.com website to work around its common annoyances.
 // @author       Piyush Soni
 // @match        https://rbcommons.com/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=rbcommons.com
+// @resource     custom-prompt-css https://raw.githubusercontent.com/pisoni-onshape/better-rbcommons/refs/heads/main/custom-prompt.css
+// @require      https://raw.githubusercontent.com/pisoni-onshape/better-rbcommons/refs/heads/main/custom-prompt.js
+// @resource     github-icon https://raw.githubusercontent.com/pisoni-onshape/better-rbcommons/main/Github-icon.png
+// @resource     vscode-icon https://raw.githubusercontent.com/pisoni-onshape/better-rbcommons/main/VSCode-icon.png
 // @grant        GM_registerMenuCommand
 // @grant        GM_getValue
 // @grant        GM_setValue
 // @grant        GM_addStyle
 // @grant        GM_getResourceURL
-// @resource     github-icon https://raw.githubusercontent.com/pisoni-onshape/better-rbcommons/main/Github-icon.png
-// @resource     vscode-icon https://raw.githubusercontent.com/pisoni-onshape/better-rbcommons/main/VSCode-icon.png
+// @grant        GM_getResourceText
 // ==/UserScript==
 
 (function() {
     'use strict';
+    // Run the code only in the top level page, not in frames.
+    if (window.top != window.self) {
+        return;
+    }
 
     function waitForElement(selector) {
         return new Promise(resolve => {
@@ -382,15 +389,16 @@
         });
 
         GM_registerMenuCommand('Set VS Code Newton Path', () => {
-            // Clear the existing value if any
-            const previousValue = GM_getValue('baseNewtonDirectoryPath', '');
-            GM_setValue('baseNewtonDirectoryPath', null);
-            const currentValue = getVSCodeBasePath();
-            if (previousValue != '' && currentValue == null) {
-                // User has cancelled the input. In that case, let's set it again to the previous value.
-                GM_setValue('baseNewtonDirectoryPath', previousValue);
-            }
-            window.location.reload();
+                customPrompt("Enter your base newton directory path on the local machine: e.g. /Users/<home-dir>/repos/newton", GM_getValue('baseNewtonDirectoryPath', ''))
+                    .then(path => {
+                    if (color === null) {
+                        console.log("No VS Code path entered.");
+                    } else {
+                        GM_setValue('baseNewtonDirectoryPath', path);
+                        console.log("New path set to: " + path);
+                        window.location.reload();
+                    }
+                });
         });
     }
 
@@ -456,6 +464,8 @@
             GM_setValue('showExactTimesEnabled', !GM_getValue('showExactTimesEnabled', true));
             window.location.reload();
         });
+
+        GM_addStyle(GM_getResourceText('custom-prompt-css'));
     }
 
     // Main code begins here.
