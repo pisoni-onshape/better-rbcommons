@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Better RBCommons
 // @namespace    piyushsoni
-// @version      1.6
+// @version      1.77
 // @description  Add some useful little features to RBCommons.com website to work around its common annoyances.
 // @author       Piyush Soni
 // @match        https://rbcommons.com/*
@@ -219,7 +219,6 @@
                     testFileNameRows();
                 });
             });
-
         }
 
         function setSeparatorPositions(table, separator) {
@@ -392,11 +391,13 @@
         GM_registerMenuCommand('Set VS Code Newton Path', () => {
                 customPrompt("Enter your base newton directory path on the local machine: e.g. /Users/<home-dir>/repos/newton", GM_getValue('baseNewtonDirectoryPath', ''))
                     .then(path => {
-                      if (path !== null) {
-                          GM_setValue('baseNewtonDirectoryPath', path);
-                          console.log("New path set to: " + path);
-                          window.location.reload();
-                      }
+                    if (path === null) {
+                        console.log("No VS Code path entered.");
+                    } else {
+                        GM_setValue('baseNewtonDirectoryPath', path);
+                        console.log("New path set to: " + path);
+                        window.location.reload();
+                    }
                 });
         });
     }
@@ -411,6 +412,7 @@
             if (ulElement) {
                 for (const link of arrNewLinks) {
                     const newLink = document.createElement('li');
+                    newLink.className = "rb-c-topbar__nav-item";
                     newLink.innerHTML = '<a href="' + link[1] + '">' + link[0] + '</a>';
                     ulElement.appendChild(newLink);
                 }
@@ -431,7 +433,7 @@
             for (let i = 0; i < timeElements.length; ++i) {
                 const thisElement = timeElements[i];
                 const title = thisElement.getAttribute('title');
-                if (title.length > 0) {
+                if (title && title.length > 0) {
                     // Add a new element showing the exact time
                     const text = thisElement.textContent;
                     const newSibling = document.createElement('span');
