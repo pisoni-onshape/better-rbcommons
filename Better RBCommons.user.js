@@ -219,6 +219,7 @@
                     testFileNameRows();
                 });
             });
+
         }
 
         function setSeparatorPositions(table, separator) {
@@ -391,13 +392,11 @@
         GM_registerMenuCommand('Set VS Code Newton Path', () => {
                 customPrompt("Enter your base newton directory path on the local machine: e.g. /Users/<home-dir>/repos/newton", GM_getValue('baseNewtonDirectoryPath', ''))
                     .then(path => {
-                    if (color === null) {
-                        console.log("No VS Code path entered.");
-                    } else {
-                        GM_setValue('baseNewtonDirectoryPath', path);
-                        console.log("New path set to: " + path);
-                        window.location.reload();
-                    }
+                      if (path !== null) {
+                          GM_setValue('baseNewtonDirectoryPath', path);
+                          console.log("New path set to: " + path);
+                          window.location.reload();
+                      }
                 });
         });
     }
