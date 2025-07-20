@@ -64,11 +64,11 @@
 
     .custom-prompt-dialog button.ok-button {
         background-color: #007bff;
-        color: white;
+        color: black;
         border-color: #007bff;
     }
     .custom-prompt-dialog button.ok-button:hover {
-        background-color: #0056b3;
+        background-color: #e0e0e0;
     }
 
     .custom-prompt-dialog button.cancel-button {
