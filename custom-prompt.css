@@ -67,14 +67,8 @@
         color: black;
         border-color: #007bff;
     }
-    .custom-prompt-dialog button.ok-button:hover {
-        background-color: #e0e0e0;
-    }
 
     .custom-prompt-dialog button.cancel-button {
         background-color: #f0f0f0;
         color: #333;
-    }
-    .custom-prompt-dialog button.cancel-button:hover {
-        background-color: #e0e0e0;
     }
