@@ -412,6 +412,10 @@
                 }
             });
         }
+
+        if (gmSettings.getFieldValue('enableResizingFileDiffs')) {
+            activateDiffColumnResize();
+        }
     }
 
     function mainAllPages() {
@@ -462,13 +466,11 @@
             }
         }
 
-        let showExtraLinksEnabled = gmSettings.getFieldValue('enableShowingExtraLinks');
-        if (showExtraLinksEnabled) {
+        if (gmSettings.getFieldValue('enableShowingExtraLinks')) {
             activateShowExtraLinks();
         }
 
-        let showExactTimesEnabled = gmSettings.getFieldValue('enableShowingExactTimes');
-        if (showExactTimesEnabled) {
+        if (gmSettings.getFieldValue('enableShowingExactTimes')) {
             activateShowExactTimes();
         }
     }
@@ -490,7 +492,15 @@
                 {
                     id: 'enableShowingExactTimes',
                     type: 'checkbox',
-                    labelText: 'Show exact times instead of relative',
+                    labelText: 'Show exact times',
+                    tooltip: 'Show absolute time besides RBCommons relative times like 2 days, 19 hours ago',
+                    defaultValue: true
+                },
+                {
+                    id: 'enableResizingFileDiffs',
+                    type: 'checkbox',
+                    labelText: 'Allow resizing file diff panes',
+                    tooltip: 'Resize file diff panes by pressing arrow keys or Shift + Mouse drag',
                     defaultValue: true
                 },
                 {
