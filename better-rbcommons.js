@@ -335,25 +335,12 @@
                 } else if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
                     // Left/Right arrow
                     const direction = event.key === 'ArrowRight' ? 1 : -1;
-                    const multiple = 1.0 + (direction * 0.03);
                     let table = getTableUnderMouse();
                     if (!table) {
                         return;
                     }
 
-                    const leftCol = table.querySelector('colgroup > .left');
-                    const rightCol = table.querySelector('colgroup > .right');
-
-                    if (leftCol) {
-                        const currentWidthInPercent = leftCol.style.width ? parseInt(leftCol.style.width.replace("%",""),10) : Math.round(leftCol.offsetWidth / window.innerWidth * 100);
-                        let newLeftWidth = currentWidthInPercent + (direction * 2);
-                        if (newLeftWidth < 10)
-                            newLeftWidth = 10;
-                        if (newLeftWidth > 90)
-                            newLeftWidth = 90;
-                        leftCol.setAttribute("style","width:" + newLeftWidth + "%");
-                        rightCol.setAttribute('style', 'width:' + (100- 2 - newLeftWidth) + '%');
-                    }
+                    resizeDiffPanesToNewCenter(table, null, direction);
                 }
             });
 
@@ -363,6 +350,34 @@
                     lastSeparator = null;
                     lastTable = null;
                 }
+            }
+
+            function resizeDiffPanesToNewCenter(table, newCenter, directionIfAny) {
+                const leftCol = table.querySelector('colgroup > .left');
+                const leftColRect = leftCol.getBoundingClientRect();
+                const centerCol = leftCol.nextElementSibling;
+                const centerColRect = centerCol.getBoundingClientRect();
+                const rightCol = table.querySelector('colgroup > .right');
+                const rightColRect = rightCol.getBoundingClientRect();
+                // If newCenter is not give, but a 'direction' is given (arrow keys)
+                // just do some percent change.
+                if (!newCenter && typeof directionIfAny === 'number') {
+                    const oldCenter = (centerColRect.left + centerColRect.right)/2;
+                    const PERCENT_CHANGE = 0.03;
+                    const multiple = 1.0 + (directionIfAny * PERCENT_CHANGE);
+                    newCenter = oldCenter * multiple;
+                }
+
+                // New right of the left column will be the mouseX coordinate minus
+                // half of the central column width.
+                const newRight = newCenter - centerColRect.width / 2.0;
+                const oldLeftWidth = leftColRect.width;
+                const newLeftWidth = newRight - leftColRect.left;
+                const diff = newLeftWidth - oldLeftWidth;
+                const oldRightWidth = rightColRect.width;
+                const newRightWidth = oldRightWidth - diff;
+                leftCol.setAttribute('style', 'width:' + newLeftWidth + 'px');
+                rightCol.setAttribute('style', 'width:' + newRightWidth + 'px');
             }
 
             document.addEventListener('keyup', (event) => {
@@ -397,15 +412,7 @@
                     return;
                 }
 
-                const leftCol = lastTable.querySelector('colgroup > .left');
-                const rightCol = lastTable.querySelector('colgroup > .right');
-                const leftColRect = leftCol.getBoundingClientRect();
-                const currentLeftColWidth = leftCol.offsetWidth;
-                const currentRightColWidth = rightCol.offsetWidth;
-                const newLeftColWidth = event.clientX - leftColRect.left;
-                const newPercentage = newLeftColWidth / (currentLeftColWidth + currentRightColWidth) * 100;
-                leftCol.setAttribute('style', 'width:' + newPercentage + '%');
-                rightCol.setAttribute('style', 'width:' + (100-2-newPercentage) + '%');
+                resizeDiffPanesToNewCenter(lastTable, event.clientX);
                 setSeparatorPositions(lastTable, lastSeparator);
             });
 
