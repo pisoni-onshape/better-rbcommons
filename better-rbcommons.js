@@ -302,6 +302,12 @@
         function activateDiffColumnResize() {
             let lastSeparator = null;
             let lastTable = null;
+
+            // Override diff table's minimum width of 615px, it's too big.
+            GM_addStyle(`
+                .revision-row > th.revision-col { min-width: 300px !important; }
+            `);
+
             // Resize diff box columns
             document.addEventListener('keydown', (event) => {
                 if (event.key === 'Shift') {
@@ -341,14 +347,12 @@
                     if (leftCol) {
                         const currentWidthInPercent = leftCol.style.width ? parseInt(leftCol.style.width.replace("%",""),10) : Math.round(leftCol.offsetWidth / window.innerWidth * 100);
                         let newLeftWidth = currentWidthInPercent + (direction * 2);
-                        if (newLeftWidth < 30)
-                            newLeftWidth = 30;
-                        if (newLeftWidth > 70)
-                            newLeftWidth = 70;
-                        //const newRightWidth = 100 - 2 - newLeftWidth;
-                        //console.log('current width is : ' + currentWidthInPercent + ', setting new width to : ' + newLeftWidth + "%");
+                        if (newLeftWidth < 10)
+                            newLeftWidth = 10;
+                        if (newLeftWidth > 90)
+                            newLeftWidth = 90;
                         leftCol.setAttribute("style","width:" + newLeftWidth + "%");
-                        rightCol.setAttribute('style', 'width:' + (100-newLeftWidth) + '%');
+                        rightCol.setAttribute('style', 'width:' + (100- 2 - newLeftWidth) + '%');
                     }
                 }
             });
@@ -401,7 +405,7 @@
                 const newLeftColWidth = event.clientX - leftColRect.left;
                 const newPercentage = newLeftColWidth / (currentLeftColWidth + currentRightColWidth) * 100;
                 leftCol.setAttribute('style', 'width:' + newPercentage + '%');
-                rightCol.setAttribute('style', 'width:' + (100-newPercentage) + '%');
+                rightCol.setAttribute('style', 'width:' + (100-2-newPercentage) + '%');
                 setSeparatorPositions(lastTable, lastSeparator);
             });
 
