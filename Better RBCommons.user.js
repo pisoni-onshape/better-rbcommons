@@ -1,14 +1,12 @@
 // ==UserScript==
 // @name         Better RBCommons
 // @namespace    piyushsoni
-// @version      2.0.0
+// @version      2.0.1
 // @description  Add some useful little features to RBCommons.com website to work around its common annoyances.
 // @author       Piyush Soni
 // @match        https://www.rbcommons.com/*
 // @match        https://rbcommons.com/s/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=rbcommons.com
-// @resource     custom-prompt-css https://raw.githubusercontent.com/pisoni-onshape/better-rbcommons/refs/heads/main/custom-prompt.css
-// @require      https://raw.githubusercontent.com/pisoni-onshape/better-rbcommons/refs/heads/main/custom-prompt.js
 // @resource     config-style https://raw.githubusercontent.com/piyushsoni/userscript-config/refs/heads/main/userscript-config-style.css
 // @require      https://raw.githubusercontent.com/piyushsoni/userscript-config/refs/heads/main/userscript-config.js
 // @resource     github-icon https://raw.githubusercontent.com/pisoni-onshape/better-rbcommons/main/Github-icon.png
