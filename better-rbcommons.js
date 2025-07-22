@@ -59,10 +59,8 @@
         let newIcon = document.createElement('img');
         let newIconURL = GM_getResourceURL(iconResourceName);
         newIcon.src = newIconURL;
-        newIcon.style.width = '12px';
-        newIcon.style.height = '12px';
-        newIcon.style.padding = '2px';
-        newIcon.style.verticalAlign = 'middle';
+        newIcon.className = 'file-open-icon';
+
         newIcon.title = title;
 
         const newLink = document.createElement('a');
@@ -132,6 +130,10 @@
     function mainDiffPage() {
         GM_addStyle(`
             .file-open-links { padding-left: 5px; text-align: right; }
+        `);
+
+        GM_addStyle(`
+            .file-open-icon { width: 14px; height: 14px; vertical-align: middle; }
         `);
 
         function addIconLinks(filePath, parentElement) {
@@ -306,7 +308,6 @@
             separator.style.height = totalSeparatorHeight + 'px';
         }
 
-        let isShiftPressed = false;
         function activateDiffColumnResize() {
             let lastSeparator = null;
             let lastTable = null;
@@ -319,7 +320,6 @@
             // Resize diff box columns
             document.addEventListener('keydown', (event) => {
                 if (event.key === 'Shift') {
-                    isShiftPressed = true;
                     let table = getTableUnderMouse();
                     if (!table) {
                         return;
