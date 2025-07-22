@@ -16,10 +16,10 @@
     // Globals
     let gmSettings = null; // Will load them in loadSettings()
     const fileHandlers = {
-      vscode: {settingId: 'vscodeExtensions', name: 'VS Code', icon: 'vscode-icon', getFullPath: (newtonPath, filePath) => `vscode://file${newtonPath}${filePath}`},
-      idea: {settingId: 'ideaExtensions', name: 'IntelliJ IDEA', icon: 'idea-icon', getFullPath: (newtonPath, filePath) => `idea://open?file=${newtonPath}${filePath}`},
-      webstorm: {settingId: 'webstormExtensions', name: 'WebStorm', icon: 'webstorm-icon', getFullPath: (newtonPath, filePath) => `webstorm://open?file=${newtonPath}${filePath}`},
-      pycharm: {settingId: 'pycharmExtensions', name: 'PyCharm', icon: 'pycharm-icon', getFullPath: (newtonPath, filePath) => `pycharm://open?file=${newtonPath}${filePath}`},
+      vscode: {settingId: 'vscodeExtensions', name: 'VS Code', icon: 'vscode-icon', getFullPath: (newtonPath, filePath, lineNumber) => `vscode://file${newtonPath}${filePath}` + (lineNumber ? ':' + lineNumber : '')},
+      idea: {settingId: 'ideaExtensions', name: 'IntelliJ IDEA', icon: 'idea-icon', getFullPath: (newtonPath, filePath, lineNumber) => `idea://open?file=${newtonPath}${filePath}` + (lineNumber ? '&line=' + lineNumber : '')},
+      webstorm: {settingId: 'webstormExtensions', name: 'WebStorm', icon: 'webstorm-icon', getFullPath: (newtonPath, filePath, lineNumber) => `webstorm://open?file=${newtonPath}${filePath}` + (lineNumber ? '&line=' + lineNumber : '')},
+      pycharm: {settingId: 'pycharmExtensions', name: 'PyCharm', icon: 'pycharm-icon', getFullPath: (newtonPath, filePath, lineNumber) => `pycharm://open?file=${newtonPath}${filePath}` + (lineNumber ? '&line=' + lineNumber : '')},
     };
 
     // Helper functions
@@ -95,7 +95,7 @@
       return '';
     }
 
-    function getFileHandlerAndFullPath(filePath) {
+    function getFileHandlerAndFullPath(filePath, lineNumber /* optional */) {
         const newtonPath = getBaseNewtonDirectory();
         if (!newtonPath) {
             return null;
@@ -124,7 +124,7 @@
           }
         }
 
-        return { fileHandler: resultFileHandler, fullPath: resultFileHandler.getFullPath(newtonPath, filePath) };
+        return { fileHandler: resultFileHandler, fullPath: resultFileHandler.getFullPath(newtonPath, filePath, lineNumber) };
     }
 
     function mainDiffPage() {
@@ -166,18 +166,20 @@
             return fullGithubPath;
         }
 
-        function getFilenameUnderMouse() {
-            const table = getTableUnderMouse();
-            if (!table) {
-                return false;
+        function getFilenameAndLineUnderMouse() {
+            const result = getTableUnderMouse(true /* get line number */);
+            if (!result) {
+                return null;
             }
-            const filePath = getFilepathFromTable(table);
-            return filePath;
+
+            const lineNumber = result.line;
+            const filePath = getFilepathFromTable(result.table);
+            return {filePath, lineNumber};
         }
 
         function activateGeneralShortcuts() {
-            function openFilePathInExternalEditor(filePath) {
-                const result = getFileHandlerAndFullPath(filePath);
+            function openFilePathInExternalEditor(filePath, lineNumber) {
+                const result = getFileHandlerAndFullPath(filePath, lineNumber);
                 if (!result) {
                     return;
                 }
@@ -208,9 +210,9 @@
                             return false;
                         }
 
-                        filePath = getFilenameUnderMouse();
-                        if (filePath) {
-                            openFilePathInExternalEditor(filePath);
+                        const result = getFilenameAndLineUnderMouse();
+                        if (result.filePath) {
+                            openFilePathInExternalEditor(result.filePath, result.lineNumber);
                         }
 
                         return true;
@@ -220,7 +222,7 @@
                             return false;
                         }
 
-                        filePath = getFilenameUnderMouse();
+                        filePath = getFilenameAndLineUnderMouse();
                         if (filePath) {
                             openFilePathOnGithub(filePath);
                         }
@@ -248,17 +250,19 @@
             }
         }
 
-        function getTableUnderMouse() {
-            var hoveredItems = document.querySelectorAll(":hover");
+        function getTableUnderMouse(doGetLineNumber /* boolean */) {
+            const hoveredItems = document.querySelectorAll(":hover");
             if (!hoveredItems || hoveredItems.length === 0) {
                 return null;
             }
 
-            var currentElement = hoveredItems[hoveredItems.length - 1];
-
+            let currentElement = hoveredItems[hoveredItems.length - 1];
+            let lineAttribute = '';
             while (currentElement !== null) {
-                if (currentElement.tagName.toLowerCase() === 'table') {
-                    return currentElement;
+                if (doGetLineNumber && currentElement.tagName.toLocaleLowerCase() === 'tr') {
+                    lineAttribute = currentElement.getAttribute('line');
+                } else if (currentElement.tagName.toLowerCase() === 'table') {
+                    return doGetLineNumber ? {table: currentElement, line: lineAttribute} : currentElement;
                 }
 
                 currentElement = currentElement.parentElement;
