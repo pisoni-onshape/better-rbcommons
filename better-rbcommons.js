@@ -191,56 +191,96 @@
             return { filePath, lineNumber };
         }
 
-        function activateGeneralShortcuts() {
-            function openFilePathInExternalEditor(fileDetails) {
-                if (!fileDetails || !fileDetails.filePath) {
-                    return false;
-                }
-
-                const result = getFileHandlerAndFullPath(fileDetails);
-                if (!result) {
-                    return false;
-                }
-
-                // Open the file.
-                window.location.href = result.fullPath;
-                return true;
-            }
-
-            function openFilePathOnGithub(fileDetails) {
-                if (!fileDetails || !fileDetails.filePath) {
-                    return false;
-                }
-
-                const fullGithubPath = getFullGithubURL(fileDetails);
-                if (fullGithubPath) {
-                    window.open(fullGithubPath, '_blank');
-                    return true;
-                }
-
+        function openFilePathInExternalEditor(fileDetails) {
+            if (!fileDetails || !fileDetails.filePath) {
                 return false;
             }
 
-            document.addEventListener('keypress', (event) => {
-                if (!event.ctrlKey) {
-                    return false;
-                }
+            const result = getFileHandlerAndFullPath(fileDetails);
+            if (!result) {
+                return false;
+            }
 
+            // Open the file.
+            window.location.href = result.fullPath;
+            return true;
+        }
+
+        function openFilePathOnGithub(fileDetails) {
+            if (!fileDetails || !fileDetails.filePath) {
+                return false;
+            }
+
+            const fullGithubPath = getFullGithubURL(fileDetails);
+            if (fullGithubPath) {
+                window.open(fullGithubPath, '_blank');
+                return true;
+            }
+
+            return false;
+        }
+
+        function fireClickEvent(element) {
+            const clickEvent = new MouseEvent('click', { bubbles: true, cancelable: true });
+            element.dispatchEvent(clickEvent);
+        }
+
+        function activateGeneralShortcuts() {
+            document.addEventListener('keydown', (event) => {
+                let handled = false;
                 switch (event.key) {
                     case 'o':
-                        if (!gmSettings.getFieldValue('enableQuickFileOpenLinks')) {
-                            return false;
+                        if (!event.ctrlKey || !gmSettings.getFieldValue('enableQuickFileOpenLinks')) {
+                            return;
                         }
 
-                        return openFilePathInExternalEditor(getFilenameAndLineUnderMouse());
-                        break;
+                        handled = openFilePathInExternalEditor(getFilenameAndLineUnderMouse());
+                    break;
                     case 'g':
-                        if (!gmSettings.getFieldValue('enableFileGithubLink')) {
-                            return false;
+                        if (!event.ctrlKey || !gmSettings.getFieldValue('enableFileGithubLink')) {
+                            return;
                         }
 
-                        return openFilePathOnGithub(getFilenameAndLineUnderMouse());
-                        break;
+                        handled = openFilePathOnGithub(getFilenameAndLineUnderMouse());
+                    break;
+                    case 'b':
+                    case 'e':
+                    case 'c':
+                        if (!event.metaKey) {
+                            return;
+                        }
+
+                        const selectedTextElements = document.querySelectorAll('.CodeMirror-selectedtext');
+                        if (!selectedTextElements || selectedTextElements.length === 0) {
+                            console.debug('No selected text found.');
+                            return;
+                        }
+
+                        // weird key for italic, but RBCommons does something else with 'i'
+                        // Anyway the most important one is Meta+Shift+C for code literal,
+                        // and that works.
+                        const buttons = {
+                            'b': {title: 'Bold', additionalCondition: true},
+                            'e': {title: 'Italic', additionalCondition: true},
+                            'c': {title: 'Code literal', additionalCondition: event.shiftKey}
+                        }
+
+                        // Since there can be only one Comment dialog active at a time, if there's a selected
+                        // text and we find the relevant button to the keyboart shorcut above, just press it.
+                        const buttonSelector = buttons[event.key];
+                        if (buttonSelector.additionalCondition === true) {
+                            const actionButton = document.querySelector(`.rb-c-formatting-toolbar button[title="${buttonSelector.title}"]`);
+                            if (actionButton) {
+                                fireClickEvent(actionButton);
+                                handled = true;
+                            }
+                        }
+                    break;
+                }
+
+                if (handled) {
+                    event.preventDefault();
+                    event.stopPropagation();
                 }
             });
         }
@@ -289,7 +329,7 @@
                 return null;
             }
 
-            var filenameRow = table.querySelector('thead > tr.filename-row');
+            const filenameRow = table.querySelector('thead > tr.filename-row');
             return filenameRow ? filenameRow.textContent.trim() : '';
         }
 
