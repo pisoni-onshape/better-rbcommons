@@ -95,16 +95,20 @@
       return '';
     }
 
-    function getFileHandlerAndFullPath(filePath, lineNumber /* optional */) {
+    function getDefaultFileHandler() {
+        return fileHandlers[gmSettings.getFieldValue('defaultHandlerApp')];
+    }
+
+    function getFileHandlerAndFullPath(fileDetails /* {filePath, lineNumber} */) {
         const newtonPath = getBaseNewtonDirectory();
-        if (!newtonPath) {
+        if (!newtonPath || !fileDetails || !fileDetails.filePath) {
             return null;
         }
 
-        const defaultFileHandler = fileHandlers[gmSettings.getFieldValue('defaultHandlerApp')];
+        const defaultFileHandler = getDefaultFileHandler();
         let resultFileHandler = defaultFileHandler;
 
-        const fileExtension = getFileExtension(filePath);
+        const fileExtension = getFileExtension(fileDetails.filePath);
         if (fileExtension) {
           for (const ideKey in fileHandlers) {
             const currentHandler = fileHandlers[ideKey];
@@ -124,7 +128,7 @@
           }
         }
 
-        return { fileHandler: resultFileHandler, fullPath: resultFileHandler.getFullPath(newtonPath, filePath, lineNumber) };
+        return { fileHandler: resultFileHandler, fullPath: resultFileHandler.getFullPath(newtonPath, fileDetails.filePath, fileDetails.lineNumber) };
     }
 
     function mainDiffPage() {
@@ -140,29 +144,32 @@
             filePath = filePath.trim();
             if (gmSettings.getFieldValue('enableFileGithubLink')) {
                 // Create the github button
-                const fullGithubPath = getFullGithubURL(filePath);
+                const fullGithubPath = getFullGithubURL({filePath, lineNumber: null});
                 createIconLink('github-icon', 'Open the file in Github', fullGithubPath, parentElement, true);
             }
 
             if (gmSettings.getFieldValue('enableQuickFileOpenLinks')) {
                 // Create the vscode button
-                const result = getFileHandlerAndFullPath(filePath);
+                const result = getFileHandlerAndFullPath({filePath, lineNumber: null});
                 if (!result) {
-                // newton path is not found. Ask the user to set it on demand.
-                const defaultFileHandler = fileHandlers.vscode;
-                createIconLink(defaultFileHandler.icon, 'Open the file in ' + defaultFileHandler.name, '#', parentElement, false, (event) => { gmSettings.openSettingsDialog(); });
+                    // newton path is not found. Ask the user to set it on demand.
+                    const defaultFileHandler = getDefaultFileHandler();
+                    createIconLink(defaultFileHandler.icon, 'Open the file in ' + defaultFileHandler.name, '#', parentElement, false, (event) => { gmSettings.openSettingsDialog(); });
                 } else {
-                createIconLink(result.fileHandler.icon, 'Open the file in ' + result.fileHandler.name, result.fullPath, parentElement, false);
+                    createIconLink(result.fileHandler.icon, 'Open the file in ' + result.fileHandler.name, result.fullPath, parentElement, false);
                 }
             }
         }
 
-        function getFullGithubURL(filePath) {
+        function getFullGithubURL(fileDetails) {
+            if (!fileDetails || !fileDetails.filePath) {
+                return null;
+            }
             const githubBasePath = gmSettings.getFieldValue('baseGithubPath');
             if (!githubBasePath.endsWith('/')) {
                 githubBasePath += '/';
             }
-            const fullGithubPath = githubBasePath + filePath;
+            const fullGithubPath = githubBasePath + fileDetails.filePath + (fileDetails.lineNumber ? '#L' + fileDetails.lineNumber : '');
             return fullGithubPath;
         }
 
@@ -178,21 +185,33 @@
         }
 
         function activateGeneralShortcuts() {
-            function openFilePathInExternalEditor(filePath, lineNumber) {
-                const result = getFileHandlerAndFullPath(filePath, lineNumber);
+            function openFilePathInExternalEditor(fileDetails) {
+                if (!fileDetails || !fileDetails.filePath) {
+                    return false;
+                }
+
+                const result = getFileHandlerAndFullPath(fileDetails);
                 if (!result) {
-                    return;
+                    return false;
                 }
 
                 // Open the file.
                 window.location.href = result.fullPath;
+                return true;
             }
 
-            function openFilePathOnGithub(filePath) {
-                const fullGithubPath = getFullGithubURL(filePath);
+            function openFilePathOnGithub(fileDetails) {
+                if (!fileDetails || !fileDetails.filePath) {
+                    return false;
+                }
+
+                const fullGithubPath = getFullGithubURL(fileDetails);
                 if (fullGithubPath) {
                     window.open(fullGithubPath);
+                    return true;
                 }
+
+                return false;
             }
 
             document.addEventListener('keypress', (event) => {
@@ -210,23 +229,14 @@
                             return false;
                         }
 
-                        const result = getFilenameAndLineUnderMouse();
-                        if (result.filePath) {
-                            openFilePathInExternalEditor(result.filePath, result.lineNumber);
-                        }
-
-                        return true;
+                        return openFilePathInExternalEditor(getFilenameAndLineUnderMouse());
                     break;
                     case 'g':
                         if (!gmSettings.getFieldValue('enableFileGithubLink')) {
                             return false;
                         }
 
-                        filePath = getFilenameAndLineUnderMouse();
-                        if (filePath) {
-                            openFilePathOnGithub(filePath);
-                        }
-                        return true;
+                        return openFilePathOnGithub(getFilenameAndLineUnderMouse());
                     break;
                 }
             });
@@ -396,7 +406,6 @@
                 isResizing = false;
                 if (event.key === 'Shift') {
                     removeLastSeparator();
-                    isShiftPressed = false;
                 }
             });
 
@@ -437,18 +446,17 @@
         }
 
         waitForElement('.reviewable-page').then((element) => {
+            if (gmSettings.getFieldValue('enableResizingFileDiffs')) {
+                activateDiffColumnResize();
+            }
+
+            // Activate this regardless:
+            activateGeneralShortcuts();
             document.addEventListener('scroll', (event) => {
                 // handle the scroll event
                 addFileHandlersOnFilenameRows();
             });
         });
-
-        if (gmSettings.getFieldValue('enableResizingFileDiffs')) {
-            activateDiffColumnResize();
-        }
-
-        // Activate this regardless:
-        activateGeneralShortcuts();
     }
 
     function mainAllPages() {
@@ -532,15 +540,17 @@
             menu.appendChild(liElement);
         }
 
-        if (gmSettings.getFieldValue('enableShowingExtraLinks')) {
-            activateShowExtraLinks();
-        }
+        waitForElement('.ink-c-menu-label > .ink-c-menu').then((element) => {
+            if (gmSettings.getFieldValue('enableShowingExtraLinks')) {
+                activateShowExtraLinks();
+            }
 
-        if (gmSettings.getFieldValue('enableShowingExactTimes')) {
-            activateShowExactTimes();
-        }
+            if (gmSettings.getFieldValue('enableShowingExactTimes')) {
+                activateShowExactTimes();
+            }
 
-        createRBCommonsSettingsMenuItem();
+            createRBCommonsSettingsMenuItem();
+        });
     }
 
     function loadSettings() {
