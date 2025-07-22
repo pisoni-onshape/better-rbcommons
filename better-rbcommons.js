@@ -60,18 +60,26 @@
         let newIconURL = GM_getResourceURL(iconResourceName);
         newIcon.src = newIconURL;
         newIcon.className = 'file-open-icon';
-
         newIcon.title = title;
 
         const newLink = document.createElement('a');
-        if (openInNewTab) {
-            newLink.target = '_blank';
-        }
         newLink.name = iconResourceName;
         newLink.appendChild(newIcon);
         newLink.href = href;
-        // Prevent RBCommons preventing clicks to go through
-        const callback = callbackIfAny || ((event) => { event.stopPropagation(); });
+
+        const callback = callbackIfAny || ((event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            // Why callback? RBCommons blanket prevents regular link click
+            // at a lot of places including the top Diff Files section :|
+            // Having the href above is only so that the browser can show the
+            // link it will go.
+            if (openInNewTab) {
+                window.open(href, '_blank');
+            } else {
+                window.location.href = href;
+            }
+        });
         newLink.addEventListener('click', callback);
         parentDiv.appendChild(newLink);
     }
@@ -138,7 +146,7 @@
         `);
 
         GM_addStyle(`
-            .file-open-icon { width: 14px; height: 14px; vertical-align: middle; }
+            .file-open-icon { width: 14px; height: 14px; vertical-align: middle; cursor: pointer; }
         `);
 
         function addIconLinks(filePath, parentElement) {
@@ -208,7 +216,7 @@
 
                 const fullGithubPath = getFullGithubURL(fileDetails);
                 if (fullGithubPath) {
-                    window.open(fullGithubPath);
+                    window.open(fullGithubPath, '_blank');
                     return true;
                 }
 
@@ -463,18 +471,18 @@
     function mainAllPages() {
         function activateShowExtraLinks() {
             const arrNewLinks = [
-                ['Incoming', '/s/bti/dashboard/?view=incoming'],
-                ['Outgoing', '/s/bti/dashboard/?view=outgoing']
+                ['idIncoming', 'Incoming', '/s/bti/dashboard/?view=incoming'],
+                ['idOutgoing', 'Outgoing', '/s/bti/dashboard/?view=outgoing']
             ];
             let ulElement = document.getElementById('navbar');
             if (ulElement) {
                 for (const link of arrNewLinks) {
+                    if (document.querySelector(link[0])) {
+                        continue;
+                    }
                     const newLink = document.createElement('li');
                     newLink.className = 'rb-c-topbar__nav-item';
-                    newLink.innerHTML = '<a href="' + link[1] + '">' + link[0] + '</a>';
-                    if (link[2]) {
-                        newLink.addEventListener('click', link[2]);
-                    }
+                    newLink.innerHTML = '<a href="' + link[2] + '">' + link[1] + '</a>';
                     ulElement.appendChild(newLink);
                 }
             }
