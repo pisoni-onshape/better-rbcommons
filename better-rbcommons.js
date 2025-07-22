@@ -16,10 +16,10 @@
     // Globals
     let gmSettings = null; // Will load them in loadSettings()
     const fileHandlers = {
-        vscode: { settingId: 'vscodeExtensions', name: 'VS Code', icon: 'vscode-icon', getFullPath: (newtonPath, filePath, lineNumber) => `vscode://file${newtonPath}${filePath}` + (lineNumber ? ':' + lineNumber : '') },
-        idea: { settingId: 'ideaExtensions', name: 'IntelliJ IDEA', icon: 'idea-icon', getFullPath: (newtonPath, filePath, lineNumber) => `idea://open?file=${newtonPath}${filePath}` + (lineNumber ? '&line=' + lineNumber : '') },
-        webstorm: { settingId: 'webstormExtensions', name: 'WebStorm', icon: 'webstorm-icon', getFullPath: (newtonPath, filePath, lineNumber) => `webstorm://open?file=${newtonPath}${filePath}` + (lineNumber ? '&line=' + lineNumber : '') },
-        pycharm: { settingId: 'pycharmExtensions', name: 'PyCharm', icon: 'pycharm-icon', getFullPath: (newtonPath, filePath, lineNumber) => `pycharm://open?file=${newtonPath}${filePath}` + (lineNumber ? '&line=' + lineNumber : '') },
+        vscode: { settingId: 'vscodeExtensions', name: 'VS Code', icon: 'vscode-icon', getFullPath: (newtonPath, filePath, lineNumber) => `vscode://file${newtonPath}/${filePath}` + (lineNumber ? ':' + lineNumber : '') },
+        idea: { settingId: 'ideaExtensions', name: 'IntelliJ IDEA', icon: 'idea-icon', getFullPath: (newtonPath, filePath, lineNumber) => `idea://open?file=${newtonPath}/${filePath}` + (lineNumber ? '&line=' + lineNumber : '') },
+        webstorm: { settingId: 'webstormExtensions', name: 'WebStorm', icon: 'webstorm-icon', getFullPath: (newtonPath, filePath, lineNumber) => `webstorm://open?file=${newtonPath}/${filePath}` + (lineNumber ? '&line=' + lineNumber : '') },
+        pycharm: { settingId: 'pycharmExtensions', name: 'PyCharm', icon: 'pycharm-icon', getFullPath: (newtonPath, filePath, lineNumber) => `pycharm://open?file=${newtonPath}/${filePath}` + (lineNumber ? '&line=' + lineNumber : '') },
     };
 
     // Helper functions
@@ -86,10 +86,8 @@
 
     function getBaseNewtonDirectory() {
         let newtonBaseDirectory = gmSettings.getFieldValue('newtonPath');
-        if (!newtonBaseDirectory.endsWith('/')) {
-            newtonBaseDirectory += '/';
-        }
-        return newtonBaseDirectory;
+        // There shouldn't be any, but trim any trailing '/' characters to be sure.
+        return newtonBaseDirectory.replace(/\/+$/,'');
     }
 
     function getFileExtension(filePath) {
