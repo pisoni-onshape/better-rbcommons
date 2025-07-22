@@ -61,6 +61,7 @@
         newIcon.src = newIconURL;
         newIcon.style.width = '12px';
         newIcon.style.height = '12px';
+        newIcon.style.padding = '2px';
         newIcon.style.verticalAlign = 'middle';
         newIcon.title = title;
 
@@ -103,7 +104,6 @@
         }
 
         const defaultFileHandler = fileHandlers[gmSettings.getFieldValue('defaultHandlerApp')];
-        let resultFullPath = '';
         let resultFileHandler = defaultFileHandler;
 
         const fileExtension = getFileExtension(filePath);
@@ -130,11 +130,120 @@
     }
 
     function mainDiffPage() {
-        // functions relevant only to the Diff Page
-        let lastFileOnTop = null;
+        GM_addStyle(`
+            .file-open-links { padding-left: 5px; text-align: right; }
+        `);
 
-        function addFileNameAtTopStyle() {
-            GM_addStyle(".filename-at-top-div { z-index: 999; position: fixed; opacity: 1; background-color: #EEDDDD; top: 0px; left: 0px; border: 1px solid; border-color: #AB7E7E; padding-left: 3px; padding-right: 3px; border-radius: 2px; box-shadow: 1px 1px lightgrey; }");
+        function addIconLinks(filePath, parentElement) {
+            filePath = filePath.trim();
+            if (gmSettings.getFieldValue('enableFileGithubLink')) {
+                // Create the github button
+                const fullGithubPath = getFullGithubURL(filePath);
+                createIconLink('github-icon', 'Open the file in Github', fullGithubPath, parentElement, true);
+            }
+
+            if (gmSettings.getFieldValue('enableQuickFileOpenLinks')) {
+                // Create the vscode button
+                const result = getFileHandlerAndFullPath(filePath);
+                if (!result) {
+                // newton path is not found. Ask the user to set it on demand.
+                const defaultFileHandler = fileHandlers.vscode;
+                createIconLink(defaultFileHandler.icon, 'Open the file in ' + defaultFileHandler.name, '#', parentElement, false, (event) => { gmSettings.openSettingsDialog(); });
+                } else {
+                createIconLink(result.fileHandler.icon, 'Open the file in ' + result.fileHandler.name, result.fullPath, parentElement, false);
+                }
+            }
+        }
+
+        function getFullGithubURL(filePath) {
+            const githubBasePath = gmSettings.getFieldValue('baseGithubPath');
+            if (!githubBasePath.endsWith('/')) {
+                githubBasePath += '/';
+            }
+            const fullGithubPath = githubBasePath + filePath;
+            return fullGithubPath;
+        }
+
+        function getFilenameUnderMouse() {
+            const table = getTableUnderMouse();
+            if (!table) {
+                return false;
+            }
+            const filePath = getFilepathFromTable(table);
+            return filePath;
+        }
+
+        function activateGeneralShortcuts() {
+            function openFilePathInExternalEditor(filePath) {
+                const result = getFileHandlerAndFullPath(filePath);
+                if (!result) {
+                    return;
+                }
+
+                // Open the file.
+                window.location.href = result.fullPath;
+            }
+
+            function openFilePathOnGithub(filePath) {
+                const fullGithubPath = getFullGithubURL(filePath);
+                if (fullGithubPath) {
+                    window.open(fullGithubPath);
+                }
+            }
+
+            document.addEventListener('keypress', (event) => {
+                if (!event.ctrlKey) {
+                    return false;
+                }
+
+                let filePath;
+                switch (event.key) {
+                    case 'r':
+                        gmSettings.openSettingsDialog();
+                    break;
+                    case 'o':
+                        if (!gmSettings.getFieldValue('enableQuickFileOpenLinks')) {
+                            return false;
+                        }
+
+                        filePath = getFilenameUnderMouse();
+                        if (filePath) {
+                            openFilePathInExternalEditor(filePath);
+                        }
+
+                        return true;
+                    break;
+                    case 'g':
+                        if (!gmSettings.getFieldValue('enableFileGithubLink')) {
+                            return false;
+                        }
+
+                        filePath = getFilenameUnderMouse();
+                        if (filePath) {
+                            openFilePathOnGithub(filePath);
+                        }
+                        return true;
+                    break;
+                }
+            });
+        }
+
+        function addFileHandlersOnFilenameRows() {
+            // Add file open links on the top of every individual file's diff section, and the files in the 'Files' section at the top, that also
+            // now remains at the top
+            const elementsToAddLinks = [...document.querySelectorAll('.filename-row > th'), ...document.querySelectorAll('.diff-file-info')];
+            for (let containerElement of elementsToAddLinks) {
+                if (containerElement.querySelector('.file-open-links')) {
+                    // already exists
+                    continue;
+                }
+
+                const filePath = containerElement.innerText.trim();
+                const newSpan = document.createElement('span');
+                newSpan.className = 'file-open-links';
+                containerElement.appendChild(newSpan);
+                addIconLinks(filePath, newSpan);
+            }
         }
 
         function getTableUnderMouse() {
@@ -156,114 +265,13 @@
             return null;
         }
 
-        // With latest changes from RBCommons it's not needed
-        // in its entirety, but keep for some time.
-        function activateFileNamesAtTheTop() {
-            addFileNameAtTopStyle();
-
-            function addIconLinks(filePath, parentElement) {
-                filePath = filePath.trim();
-                if (gmSettings.getFieldValue('enableFileGithubLink')) {
-                  // Create the github button
-                  const githubBasePath = gmSettings.getFieldValue('baseGithubPath');
-                  if (!githubBasePath.endsWith('/')) {
-                    githubBasePath += '/';
-                  }
-                  const fullGithubPath = githubBasePath + filePath;
-                  createIconLink('github-icon', 'Open the file in Github', fullGithubPath, parentElement, true);
-                }
-
-                if (gmSettings.getFieldValue('enableQuickFileOpenLinks')) {
-                  // Create the vscode button
-                  const result = getFileHandlerAndFullPath(filePath);
-                  if (!result) {
-                    // newton path is not found. Ask the user to set it on demand.
-                    const defaultFileHandler = fileHandlers.vscode;
-                    createIconLink(defaultFileHandler.icon, 'Open the file in ' + defaultFileHandler.name, '#', parentElement, false, (event) => { gmSettings.openSettingsDialog(); });
-                  } else {
-                    createIconLink(result.fileHandler.icon, 'Open the file in ' + result.fileHandler.name, result.fullPath, parentElement, false);
-                  }
-                }
+        function getFilepathFromTable(table) {
+            if (!table) {
+                return null;
             }
 
-            function createFixedAtTopDiv(id, filePath) {
-                let newDiv = document.createElement('div');
-                newDiv.id = id;
-                newDiv.innerHTML = filePath;
-                newDiv.classList.add("filename-at-top-div");
-
-                addIconLinks(filePath, newDiv);
-
-                document.body.appendChild(newDiv);
-                return newDiv;
-            }
-
-            function fixOnTop(rowElement) {
-                if (rowElement === null) {
-                    console.log('Error: null row, returning');
-                    return;
-                }
-
-                if (lastFileOnTop !== null) {
-                    if (lastFileOnTop.id === rowElement.parentNode.parentNode.id + '_fixedOnTop') {
-                        return;
-                    } else {
-                        removeTopFile();
-                    }
-                }
-
-                lastFileOnTop = createFixedAtTopDiv(rowElement.parentNode.parentNode.id + '_fixedOnTop', rowElement.innerText);
-            }
-
-            function removeTopFile() {
-                if (!lastFileOnTop) {
-                    return;
-                }
-                lastFileOnTop.remove();
-                lastFileOnTop = null;
-            }
-
-            function testFileNameRows() {
-                const filenameRows = document.getElementsByClassName('filename-row');
-                let foundOneOnTop = false;
-                for (let filenameRow of filenameRows) {
-                    if (!filenameRow.nextElementSibling) {
-                        continue;
-                    }
-
-                    const filePath = filenameRow.innerText;
-                    const elementToAddIcons = filenameRow.firstElementChild;
-
-                    addIconLinks(filePath, elementToAddIcons);
-
-                    const fileRevisionRowRect = filenameRow.nextElementSibling.getBoundingClientRect();
-                    const fileRevisionRowIsAboveTheView = fileRevisionRowRect.top < 0;
-
-                    // Find the bounds of the last row of this file's diff table.
-                    const tableLastRowRect = filenameRow.parentNode.parentNode.lastElementChild.lastElementChild.getBoundingClientRect();
-                    const tableLastRowIsAboveTheView = tableLastRowRect.top < 0;
-                    if (fileRevisionRowIsAboveTheView && !tableLastRowIsAboveTheView) {
-                        // If the filename is not visible but its table is, then put its name at the top
-                        // var rowRect = filenameRow.nextElementSibling.getBoundingClientRect();
-                        // var tableRect = filenameRow.parentNode.parentNode.lastElementChild.lastElementChild.getBoundingClientRect();
-                        // console.log("File: " + filenameRow.innerText + " was fixed on top. Its top: " + rowRect.top + ", bottom: " + rowRect.bottom + ", table top: " + tableRect.top + ", table bottom: " + tableRect.bottom);
-                        fixOnTop(filenameRow, true);
-                        foundOneOnTop = true;
-                        break;
-                    }
-                }
-
-                if (!foundOneOnTop) {
-                    removeTopFile();
-                }
-            }
-
-            waitForElement('.reviewable-page').then((element) => {
-                document.addEventListener('scroll', (event) => {
-                    // handle the scroll event
-                    testFileNameRows();
-                });
-            });
+            var filenameRow = table.querySelector('thead > tr.filename-row');
+            return filenameRow ? filenameRow.textContent.trim() : '';
         }
 
         function setSeparatorPositions(table, separator) {
@@ -424,17 +432,26 @@
             });
         }
 
+        waitForElement('.reviewable-page').then((element) => {
+            document.addEventListener('scroll', (event) => {
+                // handle the scroll event
+                addFileHandlersOnFilenameRows();
+            });
+        });
+
         if (gmSettings.getFieldValue('enableResizingFileDiffs')) {
             activateDiffColumnResize();
         }
+
+        // Activate this regardless:
+        activateGeneralShortcuts();
     }
 
     function mainAllPages() {
         function activateShowExtraLinks() {
             const arrNewLinks = [
                 ['Incoming', '/s/bti/dashboard/?view=incoming'],
-                ['Outgoing', '/s/bti/dashboard/?view=outgoing'],
-                ['Better RBCommons Settings', '#', () => {gmSettings.openSettingsDialog();}]
+                ['Outgoing', '/s/bti/dashboard/?view=outgoing']
             ];
             let ulElement = document.getElementById('navbar');
             if (ulElement) {
@@ -477,6 +494,40 @@
             }
         }
 
+        function createRBCommonsSettingsMenuItem() {
+            // Create Settings link in RBCommons 'gear' icon menu
+            const menu = document.querySelector('.ink-c-menu-label > .ink-c-menu');
+            if (!menu) {
+                return;
+            }
+
+            const liElement = document.createElement('li');
+            liElement.className = 'ink-c-menu__item';
+            liElement.draggable = false;
+            liElement.tabIndex = -1;
+            liElement.id = 'betterRBCommonsSettings';
+            liElement.addEventListener('click', (event) => gmSettings.openSettingsDialog());
+
+            const innerSpan = document.createElement('span');
+            innerSpan.className = 'ink-c-menu__item-inner';
+
+            const iconSpan = document.createElement('span');
+            iconSpan.classList.add('ink-c-menu__item-icon');
+            iconSpan.classList.add('ink-i-check');
+            iconSpan.style.maskImage = 'url(data:image/svg+xml;utf8,%3Csvg%20id%3D%22Layer_1%22%20data-name%3D%22Layer%201%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2048%2048%22%3E%3Cdefs%3E%3Cstyle%3E.cls-1%7Bfill%3Anone%3Bstroke%3A%23000%3Bstroke-linecap%3Around%3Bstroke-linejoin%3Around%3Bstroke-width%3A2px%3B%7D%3C%2Fstyle%3E%3C%2Fdefs%3E%3Ctitle%3Egear%3C%2Ftitle%3E%3Cpath%20class%3D%22cls-1%22%20d%3D%22M44%2C28V20H38.44A14.89%2C14.89%2C0%2C0%2C0%2C37%2C16.61L41%2C12.69%2C35.31%2C7%2C31.39%2C11A14.89%2C14.89%2C0%2C0%2C0%2C28%2C9.56V4H20V9.56A14.89%2C14.89%2C0%2C0%2C0%2C16.61%2C11L12.69%2C7%2C7%2C12.69%2C11%2C16.61A14.89%2C14.89%2C0%2C0%2C0%2C9.56%2C20H4v8H9.56A14.89%2C14.89%2C0%2C0%2C0%2C11%2C31.39L7%2C35.31%2C12.69%2C41%2C16.61%2C37A14.89%2C14.89%2C0%2C0%2C0%2C20%2C38.44V44h8V38.44A14.89%2C14.89%2C0%2C0%2C0%2C31.39%2C37L35.31%2C41%2C41%2C35.31%2C37%2C31.39A14.89%2C14.89%2C0%2C0%2C0%2C38.44%2C28Z%22%2F%3E%3Ccircle%20class%3D%22cls-1%22%20cx%3D%2224%22%20cy%3D%2224%22%20r%3D%2210%22%2F%3E%3Crect%20class%3D%22cls-1%22%20x%3D%22-418%22%20y%3D%22-146%22%20width%3D%22680%22%20height%3D%22680%22%2F%3E%3C%2Fsvg%3E)';
+
+            const textLabel = document.createElement('label');
+            textLabel.className = 'ink-c-menu__item-label';
+            textLabel.textContent = 'Better RBCommons Settings';
+
+            innerSpan.appendChild(iconSpan);
+            innerSpan.appendChild(textLabel);
+
+            liElement.appendChild(innerSpan);
+
+            menu.appendChild(liElement);
+        }
+
         if (gmSettings.getFieldValue('enableShowingExtraLinks')) {
             activateShowExtraLinks();
         }
@@ -484,6 +535,8 @@
         if (gmSettings.getFieldValue('enableShowingExactTimes')) {
             activateShowExactTimes();
         }
+
+        createRBCommonsSettingsMenuItem();
     }
 
     function loadSettings() {
@@ -601,7 +654,7 @@
             cancelButtonText: "Cancel"
         };
         const callbacks = {
-          onSettingsSaved: () => { window.location.reload(); }
+            onSettingsSaved: () => { window.location.reload(); }
         }
         gmSettings = new UserScriptConfig(rbCommonsConfig, callbacks);
         gmSettings.init();
