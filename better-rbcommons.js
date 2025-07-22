@@ -1,4 +1,4 @@
-(function() {
+(function () {
     'use strict';
     // Run the code only in the top level page, not in frames.
     if (window.top != window.self) {
@@ -16,10 +16,10 @@
     // Globals
     let gmSettings = null; // Will load them in loadSettings()
     const fileHandlers = {
-      vscode: {settingId: 'vscodeExtensions', name: 'VS Code', icon: 'vscode-icon', getFullPath: (newtonPath, filePath, lineNumber) => `vscode://file${newtonPath}${filePath}` + (lineNumber ? ':' + lineNumber : '')},
-      idea: {settingId: 'ideaExtensions', name: 'IntelliJ IDEA', icon: 'idea-icon', getFullPath: (newtonPath, filePath, lineNumber) => `idea://open?file=${newtonPath}${filePath}` + (lineNumber ? '&line=' + lineNumber : '')},
-      webstorm: {settingId: 'webstormExtensions', name: 'WebStorm', icon: 'webstorm-icon', getFullPath: (newtonPath, filePath, lineNumber) => `webstorm://open?file=${newtonPath}${filePath}` + (lineNumber ? '&line=' + lineNumber : '')},
-      pycharm: {settingId: 'pycharmExtensions', name: 'PyCharm', icon: 'pycharm-icon', getFullPath: (newtonPath, filePath, lineNumber) => `pycharm://open?file=${newtonPath}${filePath}` + (lineNumber ? '&line=' + lineNumber : '')},
+        vscode: { settingId: 'vscodeExtensions', name: 'VS Code', icon: 'vscode-icon', getFullPath: (newtonPath, filePath, lineNumber) => `vscode://file${newtonPath}${filePath}` + (lineNumber ? ':' + lineNumber : '') },
+        idea: { settingId: 'ideaExtensions', name: 'IntelliJ IDEA', icon: 'idea-icon', getFullPath: (newtonPath, filePath, lineNumber) => `idea://open?file=${newtonPath}${filePath}` + (lineNumber ? '&line=' + lineNumber : '') },
+        webstorm: { settingId: 'webstormExtensions', name: 'WebStorm', icon: 'webstorm-icon', getFullPath: (newtonPath, filePath, lineNumber) => `webstorm://open?file=${newtonPath}${filePath}` + (lineNumber ? '&line=' + lineNumber : '') },
+        pycharm: { settingId: 'pycharmExtensions', name: 'PyCharm', icon: 'pycharm-icon', getFullPath: (newtonPath, filePath, lineNumber) => `pycharm://open?file=${newtonPath}${filePath}` + (lineNumber ? '&line=' + lineNumber : '') },
     };
 
     // Helper functions
@@ -78,21 +78,21 @@
     function getBaseNewtonDirectory() {
         let newtonBaseDirectory = gmSettings.getFieldValue('newtonPath');
         if (!newtonBaseDirectory.endsWith('/')) {
-          newtonBaseDirectory += '/';
+            newtonBaseDirectory += '/';
         }
         return newtonBaseDirectory;
     }
 
     function getFileExtension(filePath) {
-      const parts = filePath.split('.');
-      // Avoiding files that are supposed to be
-      // 'hidden' (e.g. .gitignore / .bashrc) for now.
-      // I don't think they're needed for rbcommons for now.
-      if (parts.length > 1 && parts[0] !== '') {
-        return '.' + parts.pop();
-      }
+        const parts = filePath.split('.');
+        // Avoiding files that are supposed to be
+        // 'hidden' (e.g. .gitignore / .bashrc) for now.
+        // I don't think they're needed for rbcommons for now.
+        if (parts.length > 1 && parts[0] !== '') {
+            return '.' + parts.pop();
+        }
 
-      return '';
+        return '';
     }
 
     function getDefaultFileHandler() {
@@ -110,22 +110,22 @@
 
         const fileExtension = getFileExtension(fileDetails.filePath);
         if (fileExtension) {
-          for (const ideKey in fileHandlers) {
-            const currentHandler = fileHandlers[ideKey];
-            let extensionsStr = gmSettings.getFieldValue(currentHandler.settingId);
-            if (!extensionsStr) {
-              continue;
-            }
+            for (const ideKey in fileHandlers) {
+                const currentHandler = fileHandlers[ideKey];
+                let extensionsStr = gmSettings.getFieldValue(currentHandler.settingId);
+                if (!extensionsStr) {
+                    continue;
+                }
 
-            // Some people (e.g. me) sometimes write '*.java' instead of '.java'
-            extensionsStr = extensionsStr.replaceAll('*.','.');
+                // Some people (e.g. me) sometimes write '*.java' instead of '.java'
+                extensionsStr = extensionsStr.replaceAll('*.', '.');
 
-            const handledExtensions = extensionsStr.split(/[,\s]+/);
-            if (handledExtensions && handledExtensions.includes(fileExtension)) {
-              resultFileHandler = currentHandler;
-              break;
+                const handledExtensions = extensionsStr.split(/[,\s]+/);
+                if (handledExtensions && handledExtensions.includes(fileExtension)) {
+                    resultFileHandler = currentHandler;
+                    break;
+                }
             }
-          }
         }
 
         return { fileHandler: resultFileHandler, fullPath: resultFileHandler.getFullPath(newtonPath, fileDetails.filePath, fileDetails.lineNumber) };
@@ -144,13 +144,13 @@
             filePath = filePath.trim();
             if (gmSettings.getFieldValue('enableFileGithubLink')) {
                 // Create the github button
-                const fullGithubPath = getFullGithubURL({filePath, lineNumber: null});
+                const fullGithubPath = getFullGithubURL({ filePath, lineNumber: null });
                 createIconLink('github-icon', 'Open the file in Github', fullGithubPath, parentElement, true);
             }
 
             if (gmSettings.getFieldValue('enableQuickFileOpenLinks')) {
                 // Create the vscode button
-                const result = getFileHandlerAndFullPath({filePath, lineNumber: null});
+                const result = getFileHandlerAndFullPath({ filePath, lineNumber: null });
                 if (!result) {
                     // newton path is not found. Ask the user to set it on demand.
                     const defaultFileHandler = getDefaultFileHandler();
@@ -181,7 +181,7 @@
 
             const lineNumber = result.line;
             const filePath = getFilepathFromTable(result.table);
-            return {filePath, lineNumber};
+            return { filePath, lineNumber };
         }
 
         function activateGeneralShortcuts() {
@@ -223,21 +223,21 @@
                 switch (event.key) {
                     case 'r':
                         gmSettings.openSettingsDialog();
-                    break;
+                        break;
                     case 'o':
                         if (!gmSettings.getFieldValue('enableQuickFileOpenLinks')) {
                             return false;
                         }
 
                         return openFilePathInExternalEditor(getFilenameAndLineUnderMouse());
-                    break;
+                        break;
                     case 'g':
                         if (!gmSettings.getFieldValue('enableFileGithubLink')) {
                             return false;
                         }
 
                         return openFilePathOnGithub(getFilenameAndLineUnderMouse());
-                    break;
+                        break;
                 }
             });
         }
@@ -261,7 +261,7 @@
         }
 
         function getTableUnderMouse(doGetLineNumber /* boolean */) {
-            const hoveredItems = document.querySelectorAll(":hover");
+            const hoveredItems = document.querySelectorAll(':hover');
             if (!hoveredItems || hoveredItems.length === 0) {
                 return null;
             }
@@ -272,7 +272,7 @@
                 if (doGetLineNumber && currentElement.tagName.toLocaleLowerCase() === 'tr') {
                     lineAttribute = currentElement.getAttribute('line');
                 } else if (currentElement.tagName.toLowerCase() === 'table') {
-                    return doGetLineNumber ? {table: currentElement, line: lineAttribute} : currentElement;
+                    return doGetLineNumber ? { table: currentElement, line: lineAttribute } : currentElement;
                 }
 
                 currentElement = currentElement.parentElement;
@@ -384,7 +384,7 @@
                 // If newCenter is not give, but a 'direction' is given (arrow keys)
                 // just do some percent change.
                 if (!newCenter && typeof directionIfAny === 'number') {
-                    const oldCenter = (centerColRect.left + centerColRect.right)/2;
+                    const oldCenter = (centerColRect.left + centerColRect.right) / 2;
                     const PERCENT_CHANGE = 0.03;
                     const multiple = 1.0 + (directionIfAny * PERCENT_CHANGE);
                     newCenter = oldCenter * multiple;
@@ -421,7 +421,7 @@
                 }
 
                 isResizing = true;
-                lastSeparatorLastLeft = lastSeparator ? parseInt(lastSeparator.style.left.replace('px','')) : -1;
+                lastSeparatorLastLeft = lastSeparator ? parseInt(lastSeparator.style.left.replace('px', '')) : -1;
                 event.preventDefault();
                 event.stopPropagation();
                 return false;
@@ -469,7 +469,7 @@
             if (ulElement) {
                 for (const link of arrNewLinks) {
                     const newLink = document.createElement('li');
-                    newLink.className = "rb-c-topbar__nav-item";
+                    newLink.className = 'rb-c-topbar__nav-item';
                     newLink.innerHTML = '<a href="' + link[1] + '">' + link[0] + '</a>';
                     if (link[2]) {
                         newLink.addEventListener('click', link[2]);
@@ -556,7 +556,7 @@
     function loadSettings() {
         const rbCommonsConfig = {
             configId: 'betterRBCommons',
-            headerText: "Better RBCommons Settings",
+            headerText: 'Better RBCommons Settings',
             groups: [
                 { id: 'linkHandlers', name: 'Link Handlers', collapsedIf: { otherElementId: 'enableQuickFileOpenLinks', value: false } }
             ],
@@ -615,7 +615,7 @@
                 {
                     id: 'defaultHandlerApp',
                     type: 'dropdown',
-                    labelText: 'Default app for all extensions' ,
+                    labelText: 'Default app for all extensions',
                     defaultValue: 'vscode',
                     tooltip: 'Default handler for all unspecified extensions',
                     options: [
@@ -664,8 +664,8 @@
                     groupId: 'linkHandlers'
                 }
             ],
-            saveButtonText: "Save",
-            cancelButtonText: "Cancel"
+            saveButtonText: 'Save',
+            cancelButtonText: 'Cancel'
         };
         const callbacks = {
             onSettingsSaved: () => { window.location.reload(); }
