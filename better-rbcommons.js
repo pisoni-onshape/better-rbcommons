@@ -595,15 +595,16 @@
             createRBCommonsSettingsMenuItem();
         });
 
-        document.addEventListener('keypress', (event) => {
+        document.addEventListener('keydown', (event) => {
             if (!event.ctrlKey) {
                 return false;
             }
 
-            let filePath;
             switch (event.key) {
                 case 'r':
                     gmSettings.openSettingsDialog();
+                    event.preventDefault();
+                    event.stopPropagation();
                     break;
             }
         });
