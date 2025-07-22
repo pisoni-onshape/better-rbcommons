@@ -140,7 +140,7 @@
 
     function mainDiffPage() {
         GM_addStyle(`
-            .file-open-links { padding-left: 5px; text-align: right; }
+            .file-open-links { padding-left: 5px; text-align: right; display: inline-flex; gap: 10px; }
         `);
 
         GM_addStyle(`
@@ -226,11 +226,7 @@
                     return false;
                 }
 
-                let filePath;
                 switch (event.key) {
-                    case 'r':
-                        gmSettings.openSettingsDialog();
-                        break;
                     case 'o':
                         if (!gmSettings.getFieldValue('enableQuickFileOpenLinks')) {
                             return false;
@@ -557,6 +553,19 @@
             }
 
             createRBCommonsSettingsMenuItem();
+        });
+
+        document.addEventListener('keypress', (event) => {
+            if (!event.ctrlKey) {
+                return false;
+            }
+
+            let filePath;
+            switch (event.key) {
+                case 'r':
+                    gmSettings.openSettingsDialog();
+                    break;
+            }
         });
     }
 
