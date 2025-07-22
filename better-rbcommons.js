@@ -44,7 +44,7 @@
     }
 
     //'github-icon', 'Open the file in Github', fullGithubPath, newDiv
-    function createIconLink(iconResourceName, title, hrefURL, parentDiv, openInNewTab, callbackIfAny) {
+    function createIconLink(iconResourceName, title, href, parentDiv, openInNewTab, callbackIfAny) {
         if (!parentDiv) {
             return;
         }
@@ -69,7 +69,8 @@
         }
         newLink.name = iconResourceName;
         newLink.appendChild(newIcon);
-        newLink.href = hrefURL;
+        newLink.href = href;
+        // Prevent RBCommons preventing clicks to go through
         const callback = callbackIfAny || ((event) => { event.stopPropagation(); });
         newLink.addEventListener('click', callback);
         parentDiv.appendChild(newLink);
