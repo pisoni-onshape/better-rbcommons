@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Better RBCommons
 // @namespace    piyushsoni
-// @version      2.1.0
+// @version      2.3.0
 // @description  Add some useful little features to RBCommons.com website to work around its common annoyances.
 // @author       Piyush Soni
 // @match        https://www.rbcommons.com/*
