@@ -493,8 +493,10 @@
                 activateDiffColumnResize();
             }
 
-            // Activate this regardless:
-            activateGeneralShortcuts();
+            if (gmSettings.getFieldValue('enableKeyboardShortcuts')) {
+                activateGeneralShortcuts();
+            }
+
             document.addEventListener('scroll', (event) => {
                 // handle the scroll event
                 addFileHandlersOnFilenameRows();
@@ -595,19 +597,21 @@
             createRBCommonsSettingsMenuItem();
         });
 
-        document.addEventListener('keydown', (event) => {
-            if (!event.ctrlKey) {
-                return false;
-            }
+        if (gmSettings.getFieldValue('enableKeyboardShortcuts')) {
+            document.addEventListener('keydown', (event) => {
+                if (!event.ctrlKey) {
+                    return false;
+                }
 
-            switch (event.key) {
-                case 'r':
-                    gmSettings.openSettingsDialog();
-                    event.preventDefault();
-                    event.stopPropagation();
-                    break;
-            }
-        });
+                switch (event.key) {
+                    case 'r':
+                        gmSettings.openSettingsDialog();
+                        event.preventDefault();
+                        event.stopPropagation();
+                        break;
+                }
+            });
+        }
     }
 
     function loadSettings() {
@@ -636,6 +640,13 @@
                     type: 'checkbox',
                     labelText: 'Allow resizing file diff panes',
                     tooltip: 'Resize file diff panes by pressing arrow keys or Shift + Mouse drag',
+                    defaultValue: true
+                },
+                {
+                    id: 'enableKeyboardShortcuts',
+                    type: 'checkbox',
+                    labelText: 'Enable keyboard shortcuts',
+                    tooltip: 'Enable keyboard shortcuts for opening Settings, Github URLs, file handlers etc.',
                     defaultValue: true
                 },
                 {
