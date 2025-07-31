@@ -1,3 +1,27 @@
+// ==UserScript==
+// @name         Better RBCommons
+// @namespace    piyushsoni
+// @version      2.7.5
+// @description  Add some useful little features to RBCommons.com website to work around its common annoyances.
+// @author       Piyush Soni
+// @match        https://www.rbcommons.com/*
+// @match        https://rbcommons.com/s/*
+// @icon         https://raw.githubusercontent.com/onshape/onshape-dev-tools/ac105ffe082cbeb1d657778731f44838083e4fe9/better-rbcommons/better-rbcommons-extension/icons/better-rbcommons-icon.png?token=GHSAT0AAAAAADICSNSS66SOQHTOSSESYRCA2EKQRSA
+// @require      https://raw.githubusercontent.com/onshape/onshape-dev-tools/ac105ffe082cbeb1d657778731f44838083e4fe9/better-rbcommons/better-rbcommons-extension/src/utils.js?token=GHSAT0AAAAAADICSNSTUSOJ5IZBKZK3NEVS2EKT3CA
+// @require      https://raw.githubusercontent.com/onshape/onshape-dev-tools/ac105ffe082cbeb1d657778731f44838083e4fe9/better-rbcommons/better-rbcommons-extension/src/userscript-config.js?token=GHSAT0AAAAAADICSNSSKLJF5B2AUGVD7BTI2EKT2KA
+// @resource     Github-icon.png https://raw.githubusercontent.com/onshape/onshape-dev-tools/ac105ffe082cbeb1d657778731f44838083e4fe9/better-rbcommons/better-rbcommons-extension/resources/Github-icon.png?token=GHSAT0AAAAAADICSNST6ZR3LZYDKIGXWVIM2EKQRVA
+// @resource     VSCode-icon.png https://raw.githubusercontent.com/onshape/onshape-dev-tools/ac105ffe082cbeb1d657778731f44838083e4fe9/better-rbcommons/better-rbcommons-extension/resources/VSCode-icon.png?token=GHSAT0AAAAAADICSNSTPMKX5QGIMUHNNIQE2EKQR2A
+// @resource     IntelliJ_IDEA_Icon.svg https://raw.githubusercontent.com/onshape/onshape-dev-tools/ac105ffe082cbeb1d657778731f44838083e4fe9/better-rbcommons/better-rbcommons-extension/resources/IntelliJ_IDEA_Icon.svg?token=GHSAT0AAAAAADICSNSTBZROTU4KUZFSGE5S2EKRGUA
+// @resource     PyCharm_Icon.svg https://raw.githubusercontent.com/onshape/onshape-dev-tools/ac105ffe082cbeb1d657778731f44838083e4fe9/better-rbcommons/better-rbcommons-extension/resources/PyCharm_Icon.svg?token=GHSAT0AAAAAADICSNSTBZROTU4KUZFSGE5S2EKRGUA
+// @resource     WebStorm_Icon.svg https://raw.githubusercontent.com/onshape/onshape-dev-tools/ac105ffe082cbeb1d657778731f44838083e4fe9/better-rbcommons/better-rbcommons-extension/resources/WebStorm_Icon.svg?token=GHSAT0AAAAAADICSNSTBZROTU4KUZFSGE5S2EKRGUA
+// @resource     config-style https://raw.githubusercontent.com/onshape/onshape-dev-tools/ac105ffe082cbeb1d657778731f44838083e4fe9/better-rbcommons/better-rbcommons-extension/resources/userscript-config-style.css?token=GHSAT0AAAAAADICSNSTA6EKDVFNIZOEJ3GG2EKQTEQ
+// @grant        GM_getValue
+// @grant        GM_setValue
+// @grant        GM_addStyle
+// @grant        GM_getResourceURL
+// @grant        GM_getResourceText
+// ==/UserScript==
+
 (function () {
     'use strict';
     // Run the code only in the top level page, not in frames.
@@ -9,41 +33,29 @@
     if (typeof UserScriptConfig === 'undefined') {
         console.error('Cannot load UserScriptConfig dependency. Quitting');
         return;
-    } else {
+    } else if (typeof GM_getResourceText === 'function' && typeof GM_addStyle === 'function') {
+        // I'm purposely not defining the GM_getResourceText function in the gm_polyfill.js,
+        // as this style CSS would be automatically loaded into the page by Chrome's extension
+        // loading mechanism, but it's needed when it's running in the form of a TamperMonkey
+        // userscript.
         GM_addStyle(GM_getResourceText('config-style'));
+    }
+
+    // Test if the waitForElement method is available via dependent scripts
+    if (typeof waitForElement === 'undefined') {
+        console.error('required dependent function waitForElement not available. Quitting');
+        return;
     }
 
     // Globals
     let gmSettings = null; // Will load them in loadSettings()
     const fileHandlers = {
-        vscode: { settingId: 'vscodeExtensions', name: 'VS Code', icon: 'vscode-icon', getFullPath: (newtonPath, filePath, lineNumber) => `vscode://file${newtonPath}/${filePath}` + (lineNumber ? ':' + lineNumber : '') },
-        idea: { settingId: 'ideaExtensions', name: 'IntelliJ IDEA', icon: 'idea-icon', getFullPath: (newtonPath, filePath, lineNumber) => `idea://open?file=${newtonPath}/${filePath}` + (lineNumber ? '&line=' + lineNumber : '') },
-        webstorm: { settingId: 'webstormExtensions', name: 'WebStorm', icon: 'webstorm-icon', getFullPath: (newtonPath, filePath, lineNumber) => `webstorm://open?file=${newtonPath}/${filePath}` + (lineNumber ? '&line=' + lineNumber : '') },
-        pycharm: { settingId: 'pycharmExtensions', name: 'PyCharm', icon: 'pycharm-icon', getFullPath: (newtonPath, filePath, lineNumber) => `pycharm://open?file=${newtonPath}/${filePath}` + (lineNumber ? '&line=' + lineNumber : '') },
+        vscode: { settingId: 'vscodeExtensions', name: 'VS Code', icon: 'VSCode-icon.png', getFullPath: (newtonPath, filePath, lineNumber) => `vscode://file${newtonPath}/${filePath}` + (lineNumber ? ':' + lineNumber : '') },
+        idea: { settingId: 'ideaExtensions', name: 'IntelliJ IDEA', icon: 'IntelliJ_IDEA_Icon.svg', getFullPath: (newtonPath, filePath, lineNumber) => `idea://open?file=${newtonPath}/${filePath}` + (lineNumber ? '&line=' + lineNumber : '') },
+        webstorm: { settingId: 'webstormExtensions', name: 'WebStorm', icon: 'WebStorm_Icon.svg', getFullPath: (newtonPath, filePath, lineNumber) => `webstorm://open?file=${newtonPath}/${filePath}` + (lineNumber ? '&line=' + lineNumber : '') },
+        pycharm: { settingId: 'pycharmExtensions', name: 'PyCharm', icon: 'PyCharm_Icon.svg', getFullPath: (newtonPath, filePath, lineNumber) => `pycharm://open?file=${newtonPath}/${filePath}` + (lineNumber ? '&line=' + lineNumber : '') },
     };
 
-    // Helper functions
-    function waitForElement(selector) {
-        return new Promise(resolve => {
-            if (document.querySelector(selector)) {
-                return resolve(document.querySelector(selector));
-            }
-
-            const observer = new MutationObserver(mutations => {
-                if (document.querySelector(selector)) {
-                    observer.disconnect();
-                    resolve(document.querySelector(selector));
-                }
-            });
-
-            observer.observe(document.body, {
-                childList: true,
-                subtree: true
-            });
-        });
-    }
-
-    //'github-icon', 'Open the file in Github', fullGithubPath, newDiv
     function createIconLink(iconResourceName, title, href, parentDiv, openInNewTab, callbackIfAny) {
         if (!parentDiv) {
             return;
@@ -152,7 +164,7 @@
             if (gmSettings.getFieldValue('enableFileGithubLink')) {
                 // Create the github button
                 const fullGithubPath = getFullGithubURL({ filePath, lineNumber: null });
-                createIconLink('github-icon', 'Open the file in Github', fullGithubPath, parentElement, true);
+                createIconLink('Github-icon.png', 'Open the file in Github', fullGithubPath, parentElement, true);
             }
 
             if (gmSettings.getFieldValue('enableQuickFileOpenLinks')) {
@@ -220,11 +232,6 @@
             return false;
         }
 
-        function fireClickEvent(element) {
-            const clickEvent = new MouseEvent('click', { bubbles: true, cancelable: true });
-            element.dispatchEvent(clickEvent);
-        }
-
         function activateGeneralShortcuts() {
             document.addEventListener('keydown', (event) => {
                 let handled = false;
@@ -242,39 +249,6 @@
                         }
 
                         handled = openFilePathOnGithub(getFilenameAndLineUnderMouse());
-                    break;
-                    case 'b':
-                    case 'e':
-                    case 'c':
-                        if (!event.metaKey) {
-                            return;
-                        }
-
-                        const selectedTextElements = document.querySelectorAll('.CodeMirror-selectedtext');
-                        if (!selectedTextElements || selectedTextElements.length === 0) {
-                            console.debug('No selected text found.');
-                            return;
-                        }
-
-                        // weird key for italic, but RBCommons does something else with 'i'
-                        // Anyway the most important one is Meta+Shift+C for code literal,
-                        // and that works.
-                        const buttons = {
-                            'b': {title: 'Bold', additionalCondition: true},
-                            'e': {title: 'Italic', additionalCondition: true},
-                            'c': {title: 'Code literal', additionalCondition: event.shiftKey}
-                        }
-
-                        // Since there can be only one Comment dialog active at a time, if there's a selected
-                        // text and we find the relevant button to the keyboart shorcut above, just press it.
-                        const buttonSelector = buttons[event.key];
-                        if (buttonSelector.additionalCondition === true) {
-                            const actionButton = document.querySelector(`.rb-c-formatting-toolbar button[title="${buttonSelector.title}"]`);
-                            if (actionButton) {
-                                fireClickEvent(actionButton);
-                                handled = true;
-                            }
-                        }
                     break;
                 }
 
@@ -505,6 +479,378 @@
     }
 
     function mainAllPages() {
+        function activateJiraPreviews() {
+            'use strict';
+
+            // --- Configuration ---
+            // Regex to match the links that should trigger the preview.
+            // It captures the Jira Issue ID (e.g., BEL-250368) in the first group.
+            const URL_REGEX = /^https?:\/\/rbcommons\.com\/s\/bti\/r\/\d+\/bugs\/([A-Z]+-\d+)\/?$/;
+
+            // Base URL for the Jira REST API.
+            const JIRA_API_BASE_URL = 'https://belmonttechinc.atlassian.net/rest/api/2/issue/';
+
+            // Dimensions of the preview div
+            const PREVIEW_WIDTH = '450px'; // Slightly wider for better layout
+            const PREVIEW_HEIGHT = 'auto'; // Auto height to fit content
+            const MAX_PREVIEW_HEIGHT = '500px'; // Max height before scrollbar appears
+
+            // Offset of the preview div from the hovered link's bottom-left corner
+            const PREVIEW_OFFSET_X = 5; // Pixels to the right of the link's left edge
+            const PREVIEW_OFFSET_Y = 5; // Pixels below the link's bottom edge
+
+            // Delay (in milliseconds) before showing/hiding the preview.
+            const DEBOUNCE_DELAY = 150;
+
+            // --- Internal Variables ---
+            let previewDiv = null;    // Holds the currently displayed div element
+            let hoverTimer = null;    // Timer for debouncing mouseover (for link hover)
+            let hideTimer = null;     // Timer for debouncing mouseout (for link or preview div)
+
+            // --- Helper Functions ---
+
+            /**
+     * Safely gets a nested property from an object.
+     * @param {object} obj The object to traverse.
+     * @param {string} path The dot-separated path to the property (e.g., "assignee.displayName").
+     * @returns {any|null} The value of the property, or null if not found.
+     */
+            function getNestedProperty(obj, path) {
+                return path.split('.').reduce((acc, part) => (acc && acc[part] !== undefined) ? acc[part] : null, obj);
+            }
+
+            /**
+     * Renders the Jira issue data into HTML.
+     * @param {object} issueData The parsed JSON data for the Jira issue.
+     * @param {string} originalUrl The original URL of the link that was hovered.
+     * @returns {string} HTML string representing the issue details.
+     */
+            function renderIssueDetails(issueData, originalUrl) {
+                const fields = issueData.fields || {}; // Ensure fields object exists
+
+                const issueKey = getNestedProperty(issueData, 'key') || 'N/A';
+                const summary = getNestedProperty(fields, 'summary') || 'No Summary';
+                const fixVersion = getNestedProperty(fields, 'fixVersions.0.name') || 'None'; // Fix versions is an array, take the first one
+                const assigneeName = getNestedProperty(fields, 'assignee.displayName') || 'Unassigned';
+                const assigneeEmail = getNestedProperty(fields, 'assignee.emailAddress') || '';
+                const statusName = getNestedProperty(fields, 'status.name') || 'Unknown';
+                const priorityName = getNestedProperty(fields, 'priority.name') || 'Unknown';
+                const description = getNestedProperty(fields, 'description') || 'No description provided.';
+
+                // Basic formatting for description (replace newlines with <br>)
+                const formattedDescription = description.replace(/\n/g, '<br>');
+
+                return `
+            <div style="font-family: 'Inter', sans-serif; font-size: 14px; line-height: 1.5; color: #333;">
+                <h3 style="margin-top: 0; margin-bottom: 10px; font-size: 1.2em; border-bottom: 1px solid #eee; padding-bottom: 5px; display: flex; justify-content: space-between; align-items: center;">
+                    <a href="${originalUrl}" target="_blank" style="text-decoration: none; color: #007bff; font-weight: bold;">${issueKey}</a>
+                    <span style="font-size: 0.8em; color: #666;">Status: ${statusName}</span>
+                </h3>
+
+                <p style="font-weight: bold; margin-bottom: 5px;">Summary:</p>
+                <p style="margin-top: 0; margin-bottom: 15px; background-color: #f9f9f9; padding: 8px; border-radius: 4px;">${summary}</p>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px;">
+                    <div>
+                        <p style="font-weight: bold; margin-bottom: 5px;">Assignee:</p>
+                        <p style="margin-top: 0;">${assigneeName} ${assigneeEmail ? `<br><a href="mailto:${assigneeEmail}" style="color: #007bff; text-decoration: none;">${assigneeEmail}</a>` : ''}</p>
+                    </div>
+                    <div>
+                        <p style="font-weight: bold; margin-bottom: 5px;">Priority:</p>
+                        <p style="margin-top: 0;">${priorityName}</p>
+                    </div>
+                    <div>
+                        <p style="font-weight: bold; margin-bottom: 5px;">Fix Version:</p>
+                        <p style="margin-top: 0;">${fixVersion}</p>
+                    </div>
+                </div>
+
+                <p style="font-weight: bold; margin-bottom: 5px;">Description:</p>
+                <div style="max-height: 150px; overflow-y: auto; border: 1px solid #eee; padding: 8px; border-radius: 4px; background-color: #fcfcfc;">
+                    ${formattedDescription}
+                </div>
+            </div>
+        `;
+            }
+
+
+            /**
+     * Creates and styles the preview div element, then appends it to the document body.
+     * This function now displays pre-rendered HTML content.
+     * @param {string} contentHtml The pre-rendered HTML content for the preview.
+     * @param {DOMRect} linkRect The bounding rectangle of the hovered link.
+     */
+            function createPreviewDiv(contentHtml, linkRect) {
+                // If a preview div already exists, remove it first to ensure only one is active.
+                if (previewDiv) {
+                    removePreviewDiv();
+                }
+
+                previewDiv = document.createElement('div');
+                previewDiv.style.cssText = `
+            position: fixed; /* Position relative to the viewport */
+            border: 1px solid #ccc; /* Simple border */
+            box-shadow: 0 4px 12px rgba(0,0,0,0.25); /* Soft shadow for depth */
+            border-radius: 8px; /* Rounded corners */
+            overflow: hidden; /* Hide scrollbars for the main div */
+            z-index: 99999; /* Ensure it's on top of most page content */
+            width: ${PREVIEW_WIDTH};
+            max-height: ${MAX_PREVIEW_HEIGHT}; /* Set max height for scroll */
+            background-color: white; /* Background color for the preview div */
+            opacity: 0; /* Start with opacity 0 for a fade-in effect */
+            transition: opacity 0.2s ease-in-out; /* Smooth transition for opacity changes */
+            padding: 10px; /* Padding inside the preview div */
+            font-family: sans-serif; /* Readable font */
+            color: #333; /* Dark gray text color */
+            pointer-events: auto; /* IMPORTANT: Allow mouse events on the div itself */
+            display: flex;
+            flex-direction: column;
+        `;
+                document.body.appendChild(previewDiv);
+
+                // Add event listeners directly to the preview div to keep it open when hovered
+                previewDiv.addEventListener('mouseover', () => {
+                    clearTimeout(hideTimer); // Clear hide timer if mouse enters the preview div
+                });
+                previewDiv.addEventListener('mouseout', () => {
+                    // Start hide timer when mouse leaves the preview div
+                    hideTimer = setTimeout(removePreviewDiv, DEBOUNCE_DELAY);
+                });
+
+                // Set the pre-rendered HTML content
+                previewDiv.innerHTML = contentHtml;
+
+                // Position the div based on link's bounding rect
+                positionPreviewDiv(linkRect);
+
+                // Use a small timeout to trigger the CSS transition for fade-in.
+                setTimeout(() => {
+                    if (previewDiv) {
+                        previewDiv.style.opacity = '1'; // Fade in
+                    }
+                }, 10);
+            }
+
+            /**
+     * Removes the preview div from the DOM with a fade-out effect.
+     */
+            function removePreviewDiv() {
+                if (previewDiv) {
+                    previewDiv.style.opacity = '0'; // Start fade-out
+
+                    const divToRemove = previewDiv;
+                    previewDiv = null; // Clear the global reference immediately
+
+                    // Wait for the fade-out transition to complete before removing the element
+                    setTimeout(() => {
+                        if (divToRemove.parentNode) {
+                            divToRemove.parentNode.removeChild(divToRemove);
+                        }
+                    }, 200); // Matches the CSS transition duration
+                    console.log('[Link Preview] Hiding preview div.');
+                }
+            }
+
+            /**
+     * Positions the preview div relative to the hovered link's bounding box,
+     * ensuring it stays within the viewport.
+     * @param {DOMRect} linkRect The bounding rectangle of the hovered link.
+     */
+            function positionPreviewDiv(linkRect) {
+                if (!previewDiv) return;
+
+                const viewportWidth = window.innerWidth;
+                const viewportHeight = window.innerHeight;
+                const divRect = previewDiv.getBoundingClientRect(); // Get current size of preview div
+
+                // Calculate initial position relative to the link's bottom-left
+                let left = linkRect.left + PREVIEW_OFFSET_X;
+                let top = linkRect.bottom + PREVIEW_OFFSET_Y;
+
+                // Adjust 'left' if the div goes off the right edge of the viewport
+                if (left + divRect.width > viewportWidth - 10) { // 10px padding from edge
+                    // Try positioning to the left of the link
+                    left = linkRect.left - divRect.width - PREVIEW_OFFSET_X;
+                    if (left < 10) { // If still off the left edge, center it horizontally
+                        left = (viewportWidth - divRect.width) / 2;
+                    }
+                }
+
+                // Adjust 'top' if the div goes off the bottom edge of the viewport
+                if (top + divRect.height > viewportHeight - 10) { // 10px padding from edge
+                    // Try positioning above the link
+                    top = linkRect.top - divRect.height - PREVIEW_OFFSET_Y;
+                    if (top < 10) { // If still off the top edge, center it vertically
+                        top = (viewportWidth - divRect.height) / 2;
+                    }
+                }
+
+                // Apply the calculated position, ensuring it's never negative
+                previewDiv.style.left = `${Math.max(0, left)}px`;
+                previewDiv.style.top = `${Math.max(0, top)}px`;
+            }
+
+            // --- Event Handlers for Individual Links ---
+
+            /**
+     * Handles the 'mouseover' event on a specific link element.
+     * @param {MouseEvent} event The mouse event object.
+     */
+            function handleLinkMouseOver(event) {
+                const linkElement = event.currentTarget; // The link element itself
+                const contentHtml = linkElement.dataset.jiraPreviewHtml;
+
+                // If content is not yet loaded, or if it failed to load, show a temporary message
+                if (!contentHtml) {
+                    // This case should ideally not happen if initializeJiraLinkPreview was called and completed
+                    // but provides a fallback.
+                    console.warn('[Link Preview] Content not yet loaded or failed for this link:', linkElement.href);
+                    // Optionally, you could display a "Loading..." message here if you want immediate feedback.
+                    return;
+                }
+
+                clearTimeout(hideTimer); // Clear any pending hide timer
+
+                if (hoverTimer) {
+                    clearTimeout(hoverTimer);
+                }
+
+                hoverTimer = setTimeout(() => {
+                    const linkRect = linkElement.getBoundingClientRect();
+                    createPreviewDiv(contentHtml, linkRect);
+                }, DEBOUNCE_DELAY);
+            }
+
+            /**
+     * Handles the 'mouseout' event on a specific link element.
+     * @param {MouseEvent} event The mouse event object.
+     */
+            function handleLinkMouseOut(event) {
+                clearTimeout(hoverTimer);
+
+                // If the mouse is moving FROM the link TO the previewDiv, do NOT hide.
+                if (previewDiv && previewDiv.contains(event.relatedTarget)) {
+                    clearTimeout(hideTimer); // Ensure no hide timer is active
+                    return;
+                }
+
+                hideTimer = setTimeout(() => {
+                    removePreviewDiv();
+                }, DEBOUNCE_DELAY);
+            }
+
+            // --- Public Initialization Function ---
+
+            /**
+     * Initializes the Jira link preview for a given <a> HTML element.
+     * This function should be called once per link when the page is ready.
+     * It fetches the Jira issue data, renders the HTML, and attaches event listeners.
+     * @param {HTMLElement} linkElement The <a> HTML element to enable the preview for.
+     */
+            window.initializeJiraLinkPreview = function(linkElement) {
+                if (!linkElement || !linkElement.href) {
+                    console.error('[Link Preview] Invalid linkElement provided to initializeJiraLinkPreview.');
+                    return;
+                }
+
+                const url = linkElement.href;
+                const matches = url.match(URL_REGEX);
+
+                if (!matches || matches.length < 2) {
+                    console.warn(`[Link Preview] Link does not match Jira regex, skipping initialization: ${url}`);
+                    return;
+                }
+
+                const issueId = matches[1];
+                const apiUrl = JIRA_API_BASE_URL + issueId;
+
+                // Prevent re-initialization if already processed
+                if (linkElement.dataset.jiraPreviewInitialized) {
+                    console.log(`[Link Preview] Link ${issueId} already initialized.`);
+                    return;
+                }
+                linkElement.dataset.jiraPreviewInitialized = 'true'; // Mark as initialized
+
+                // Add a temporary loading indicator to the link itself (optional, for UX)
+                // linkElement.style.cursor = 'wait'; // Example: change cursor to indicate loading
+
+                console.log(`[Link Preview] Initializing for link: ${url}, fetching from: ${apiUrl}`);
+
+                GM.xmlHttpRequest({
+                    method: "GET",
+                    url: apiUrl,
+                    headers: {
+                        "User-Agent": navigator.userAgent,
+                        "Referer": window.location.href,
+                        "Accept": "application/json",
+                        "Accept-Language": "en-US,en;q=0.5",
+                    },
+                    onload: function(response) {
+                        let renderedHtml = '';
+                        // linkElement.style.cursor = ''; // Remove loading indicator
+
+                        if (response.status === 200) {
+                            try {
+                                const issueData = JSON.parse(response.responseText);
+                                renderedHtml = renderIssueDetails(issueData, url); // Pass original URL for link in preview
+                                console.log(`[Link Preview] Successfully fetched and rendered for ${issueId}.`);
+                            } catch (e) {
+                                renderedHtml = `
+                            <h3 style="margin-top: 0; margin-bottom: 10px; font-size: 1.1em; border-bottom: 1px solid #eee; padding-bottom: 5px;">Preview: <a href="${url}" target="_blank" style="font-size: 0.9em; text-decoration: none; color: #007bff;">${issueId}</a></h3>
+                            <p style="color: red; text-align: center; margin-top: 20px;">Error parsing JSON response.</p>
+                            <details style="font-size: 0.8em; cursor: pointer;">
+                                <summary>View Raw JSON (first 1000 chars)</summary>
+                                <pre style="white-space: pre-wrap; word-break: break-all; background-color: #f9f9f9; padding: 5px; border-radius: 4px;">${response.responseText.substring(0, 1000)}...</pre>
+                            </details>
+                        `;
+                                console.error('[Link Preview] Error parsing JSON for ' + issueId + ':', e);
+                            }
+                        } else {
+                            renderedHtml = `
+                        <p style="color: red; text-align: center; margin-top: 50px;">
+                            Failed to load Jira issue for ${issueId}. Status: ${response.status}.
+                        </p>
+                        <p style="text-align: center; font-size: 0.9em;">
+                            This often indicates an authentication issue (not logged in) or server-side blocking.
+                        </p>
+                        <details style="font-size: 0.8em; cursor: pointer;">
+                            <summary>View Raw Response (first 1000 chars)</summary>
+                            <pre style="white-space: pre-wrap; word-break: break-all; background-color: #f9f9f9; padding: 5px; border-radius: 4px;">${response.responseText.substring(0, 1000)}...</pre>
+                        </details>
+                    `;
+                            console.error(`[Link Preview] Failed to fetch for ${issueId}. Status: ${response.status}`);
+                        }
+                        // Store the rendered HTML on the link element
+                        linkElement.dataset.jiraPreviewHtml = renderedHtml;
+
+                        // Attach event listeners to this specific link element
+                        linkElement.addEventListener('mouseover', handleLinkMouseOver);
+                        linkElement.addEventListener('mouseout', handleLinkMouseOut);
+                    },
+                    onerror: function(error) {
+                        // linkElement.style.cursor = ''; // Remove loading indicator
+                        const renderedHtml = `<p style="color: red; text-align: center; margin-top: 50px;">Error fetching content for ${issueId}: ${error.statusText || 'Network error'}.</p>`;
+                        linkElement.dataset.jiraPreviewHtml = renderedHtml;
+                        console.error('[Link Preview] Network error fetching content for ' + issueId + ':', error);
+
+                        // Attach event listeners even on error, so the error message can be shown
+                        linkElement.addEventListener('mouseover', handleLinkMouseOver);
+                        linkElement.addEventListener('mouseout', handleLinkMouseOut);
+                    }
+                });
+            };
+
+            // No global initialization needed here, as the user will call initializeJiraLinkPreview
+            // for specific links.
+            waitForElement('.reviewable-page').then((element) => {
+                let bugsClosed = element.querySelectorAll('a.bug');
+                for (const bug of bugsClosed) {
+                    initializeJiraLinkPreview(bug);
+                }
+            });
+
+        }
+
         function activateShowExtraLinks() {
             const arrNewLinks = [
                 ['idIncoming', 'Incoming', '/s/bti/dashboard/?view=incoming'],
@@ -597,18 +943,71 @@
             createRBCommonsSettingsMenuItem();
         });
 
-        if (gmSettings.getFieldValue('enableKeyboardShortcuts')) {
-            document.addEventListener('keydown', (event) => {
-                if (!event.ctrlKey) {
-                    return false;
+        function registerCommentEditorShortcuts() {
+            // The page tries to capture all Comment editor, so we have to steal
+            // it from one level below theirs (but still limit the scope to our
+            // requirement).
+            onNewElement(document.body, '.rb-c-text-editor', (editorElement) => {
+                const targetNode = editorElement.querySelector('.CodeMirror');
+                if (!targetNode) {
+                    return;
                 }
 
-                switch (event.key) {
-                    case 'r':
-                        gmSettings.openSettingsDialog();
-                        event.preventDefault();
-                        event.stopPropagation();
+                targetNode.addEventListener('keydown', (event) => {
+                    if (!event.metaKey && !event.ctrlKey) {
+                        return;
+                    }
+
+                    switch (event.key) {
+                        case 'b':
+                        case 'i':
+                        case 'c':
+                        case 'x':
+                        case 'u':
+                            const buttons = {
+                                'b': {title: 'Bold', additionalCondition: true},
+                                'i': {title: 'Italic', additionalCondition: true},
+                                'c': {title: 'Code literal', additionalCondition: event.shiftKey},
+                                'x': {title: 'Strikethrough', additionalCondition: event.shiftKey},
+                                'u': {title: 'Insert link', additionalCondition: event.shiftKey}
+                            }
+
+                            const buttonSelector = buttons[event.key];
+                            if (buttonSelector.additionalCondition === true && (isMacOS() ? event.metaKey : event.ctrlKey)) {
+                                const targetNode = event.currentTarget; // Should be the one I added the event to.
+                                const actionButton = targetNode && targetNode.parentElement && targetNode.parentElement.querySelector(`button[title="${buttonSelector.title}"]`);
+                                if (actionButton) {
+                                    fireClickEvent(actionButton);
+                                    event.preventDefault();
+                                    event.stopPropagation();
+                                }
+                            }
                         break;
+                    }
+                });
+            });
+        }
+
+        function registerFullPageShortcuts() {
+            document.addEventListener('keydown', (event) => {
+                if (event.ctrlKey && event.key === 'r' ) {
+                    gmSettings.openSettingsDialog();
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
+            });
+        }
+
+        if (gmSettings.getFieldValue('enableKeyboardShortcuts')) {
+            registerCommentEditorShortcuts();
+            registerFullPageShortcuts();
+        }
+
+        if (gmSettings.getFieldValue('showJiraPreviews')) {
+            waitForElement('#field_bugs_closed').then((element) => {
+                const bugsClosed = element.querySelectorAll('a.bug');
+                for (const bug of bugsClosed) {
+                    initializeJiraLinkPreview(bug);
                 }
             });
         }
@@ -622,6 +1021,12 @@
                 { id: 'linkHandlers', name: 'Link Handlers', collapsedIf: { otherElementId: 'enableQuickFileOpenLinks', value: false } }
             ],
             settings: [
+                {
+                    id: 'showJiraPreviews',
+                    type: 'checkbox',
+                    labelText: 'Show a hover preview of Jira Bugs',
+                    defaultValue: true
+                },
                 {
                     id: 'enableShowingExtraLinks',
                     type: 'checkbox',
