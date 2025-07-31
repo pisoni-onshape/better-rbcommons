@@ -4,6 +4,8 @@ A simple Extension that adds some useful little features to RBCommons.com websit
 ## Uses
 1. The script allows you to seamlessly and dynamically resize the diff pane on review requests (something that should have been built-in). Just press the Shift button down on any diff page and start moving the separator to resize the pane width using the mouse, or just press the left or right arrow keys over a file diff section to resize them.
 
+1. Quickly shows you a hover preview of the bugs being resolved to check important details.
+
 1. It adds quick links (icons) and on most newton file paths to open them in the external IDE of choice from a pre-set list of available file handlers, for example VS Code. You can set file extensions to be opened in different IDEs through the Script's settings. Similarly, it adds a 'Open with Github' link for every file in the Diff viewer page to quickly open that in the newton repository (the path is entirely configurable, so it can really be anything). It is especially helpful in reviewing larger changes that you have applied to your local machine to test, now you can check the newly added class members / functions and their usage much more easily  in your IDE.
 
 1. For an even quicker access, it allows keyboard shortcuts like Ctrl+O and Ctrl+G to open the currently being hovered file immediately in the configured editor and in Github repository respectively, around the line your mouse was at!

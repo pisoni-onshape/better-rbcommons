@@ -20,6 +20,7 @@
 // @grant        GM_addStyle
 // @grant        GM_getResourceURL
 // @grant        GM_getResourceText
+// @grant        GM.xmlHttpRequest
 // ==/UserScript==
 
 (function () {
@@ -480,106 +481,70 @@
 
     function mainAllPages() {
         function activateJiraPreviews() {
-            'use strict';
-
-            // --- Configuration ---
-            // Regex to match the links that should trigger the preview.
-            // It captures the Jira Issue ID (e.g., BEL-250368) in the first group.
             const URL_REGEX = /^https?:\/\/rbcommons\.com\/s\/bti\/r\/\d+\/bugs\/([A-Z]+-\d+)\/?$/;
-
-            // Base URL for the Jira REST API.
             const JIRA_API_BASE_URL = 'https://belmonttechinc.atlassian.net/rest/api/2/issue/';
-
-            // Dimensions of the preview div
             const PREVIEW_WIDTH = '450px'; // Slightly wider for better layout
-            const PREVIEW_HEIGHT = 'auto'; // Auto height to fit content
             const MAX_PREVIEW_HEIGHT = '500px'; // Max height before scrollbar appears
-
-            // Offset of the preview div from the hovered link's bottom-left corner
-            const PREVIEW_OFFSET_X = 5; // Pixels to the right of the link's left edge
-            const PREVIEW_OFFSET_Y = 5; // Pixels below the link's bottom edge
-
-            // Delay (in milliseconds) before showing/hiding the preview.
+            // x, y offsets from the jira link's bounding box.
+            const PREVIEW_OFFSET_X = 5;
+            const PREVIEW_OFFSET_Y = 5;
             const DEBOUNCE_DELAY = 150;
 
-            // --- Internal Variables ---
-            let previewDiv = null;    // Holds the currently displayed div element
-            let hoverTimer = null;    // Timer for debouncing mouseover (for link hover)
-            let hideTimer = null;     // Timer for debouncing mouseout (for link or preview div)
+            let previewDiv = null;
+            let hoverTimer = null;
+            let hideTimer = null;
 
-            // --- Helper Functions ---
-
-            /**
-     * Safely gets a nested property from an object.
-     * @param {object} obj The object to traverse.
-     * @param {string} path The dot-separated path to the property (e.g., "assignee.displayName").
-     * @returns {any|null} The value of the property, or null if not found.
-     */
             function getNestedProperty(obj, path) {
                 return path.split('.').reduce((acc, part) => (acc && acc[part] !== undefined) ? acc[part] : null, obj);
             }
 
-            /**
-     * Renders the Jira issue data into HTML.
-     * @param {object} issueData The parsed JSON data for the Jira issue.
-     * @param {string} originalUrl The original URL of the link that was hovered.
-     * @returns {string} HTML string representing the issue details.
-     */
             function renderIssueDetails(issueData, originalUrl) {
                 const fields = issueData.fields || {}; // Ensure fields object exists
 
                 const issueKey = getNestedProperty(issueData, 'key') || 'N/A';
                 const summary = getNestedProperty(fields, 'summary') || 'No Summary';
-                const fixVersion = getNestedProperty(fields, 'fixVersions.0.name') || 'None'; // Fix versions is an array, take the first one
+                const fixVersion = getNestedProperty(fields, 'fixVersions.0.name') || 'None';
                 const assigneeName = getNestedProperty(fields, 'assignee.displayName') || 'Unassigned';
                 const assigneeEmail = getNestedProperty(fields, 'assignee.emailAddress') || '';
                 const statusName = getNestedProperty(fields, 'status.name') || 'Unknown';
                 const priorityName = getNestedProperty(fields, 'priority.name') || 'Unknown';
                 const description = getNestedProperty(fields, 'description') || 'No description provided.';
 
-                // Basic formatting for description (replace newlines with <br>)
                 const formattedDescription = description.replace(/\n/g, '<br>');
 
                 return `
-            <div style="font-family: 'Inter', sans-serif; font-size: 14px; line-height: 1.5; color: #333;">
-                <h3 style="margin-top: 0; margin-bottom: 10px; font-size: 1.2em; border-bottom: 1px solid #eee; padding-bottom: 5px; display: flex; justify-content: space-between; align-items: center;">
-                    <a href="${originalUrl}" target="_blank" style="text-decoration: none; color: #007bff; font-weight: bold;">${issueKey}</a>
-                    <span style="font-size: 0.8em; color: #666;">Status: ${statusName}</span>
-                </h3>
+                    <div style="font-family: 'Inter', sans-serif; font-size: 12px; line-height: 1.2; color: #333;">
+                        <h3 style="margin-top: 0; margin-bottom: 5px; font-size: 1.2em; border-bottom: 1px solid #eee; padding-bottom: 5px; display: flex; justify-content: space-between; align-items: center;">
+                            <a href="${originalUrl}" target="_blank" style="text-decoration: none; color: #007bff; font-weight: bold;">${issueKey}</a>
+                            <span style="font-size: 0.8em; color: #666;">Status: ${statusName}</span>
+                        </h3>
 
-                <p style="font-weight: bold; margin-bottom: 5px;">Summary:</p>
-                <p style="margin-top: 0; margin-bottom: 15px; background-color: #f9f9f9; padding: 8px; border-radius: 4px;">${summary}</p>
+                        <p style="font-weight: bold; margin-bottom: 5px;">Summary:</p>
+                        <p style="margin-top: 0; margin-bottom: 5px; background-color: #f9f9f9; padding: 4px; border-radius: 4px;">${summary}</p>
 
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px;">
-                    <div>
-                        <p style="font-weight: bold; margin-bottom: 5px;">Assignee:</p>
-                        <p style="margin-top: 0;">${assigneeName} ${assigneeEmail ? `<br><a href="mailto:${assigneeEmail}" style="color: #007bff; text-decoration: none;">${assigneeEmail}</a>` : ''}</p>
-                    </div>
-                    <div>
-                        <p style="font-weight: bold; margin-bottom: 5px;">Priority:</p>
-                        <p style="margin-top: 0;">${priorityName}</p>
-                    </div>
-                    <div>
-                        <p style="font-weight: bold; margin-bottom: 5px;">Fix Version:</p>
-                        <p style="margin-top: 0;">${fixVersion}</p>
-                    </div>
-                </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-bottom: 5px;">
+                            <div>
+                                <p style="font-weight: bold; margin-bottom: 5px;">Assignee:</p>
+                                <p style="margin-top: 0;">${assigneeName} ${assigneeEmail ? `<br><a href="mailto:${assigneeEmail}" style="color: #007bff; text-decoration: none;">${assigneeEmail}</a>` : ''}</p>
+                            </div>
+                            <div>
+                                <p style="font-weight: bold; margin-bottom: 5px;">Priority:</p>
+                                <p style="margin-top: 0;">${priorityName}</p>
+                            </div>
+                            <div>
+                                <p style="font-weight: bold; margin-bottom: 5px;">Fix Version:</p>
+                                <p style="margin-top: 0;">${fixVersion}</p>
+                            </div>
+                        </div>
 
-                <p style="font-weight: bold; margin-bottom: 5px;">Description:</p>
-                <div style="max-height: 150px; overflow-y: auto; border: 1px solid #eee; padding: 8px; border-radius: 4px; background-color: #fcfcfc;">
-                    ${formattedDescription}
-                </div>
-            </div>
-        `;
+                        <p style="font-weight: bold; margin-bottom: 5px;">Description:</p>
+                        <div style="max-height: 150px; overflow-y: auto; border: 1px solid #eee; padding: 8px; border-radius: 4px; background-color: #fcfcfc;">
+                            ${formattedDescription}
+                        </div>
+                    </div>
+                `;
             }
 
-
-            /**
-     * Creates and styles the preview div element, then appends it to the document body.
-     * This function now displays pre-rendered HTML content.
-     * @param {string} contentHtml The pre-rendered HTML content for the preview.
-     * @param {DOMRect} linkRect The bounding rectangle of the hovered link.
-     */
             function createPreviewDiv(contentHtml, linkRect) {
                 // If a preview div already exists, remove it first to ensure only one is active.
                 if (previewDiv) {
@@ -588,39 +553,36 @@
 
                 previewDiv = document.createElement('div');
                 previewDiv.style.cssText = `
-            position: fixed; /* Position relative to the viewport */
-            border: 1px solid #ccc; /* Simple border */
-            box-shadow: 0 4px 12px rgba(0,0,0,0.25); /* Soft shadow for depth */
-            border-radius: 8px; /* Rounded corners */
-            overflow: hidden; /* Hide scrollbars for the main div */
-            z-index: 99999; /* Ensure it's on top of most page content */
-            width: ${PREVIEW_WIDTH};
-            max-height: ${MAX_PREVIEW_HEIGHT}; /* Set max height for scroll */
-            background-color: white; /* Background color for the preview div */
-            opacity: 0; /* Start with opacity 0 for a fade-in effect */
-            transition: opacity 0.2s ease-in-out; /* Smooth transition for opacity changes */
-            padding: 10px; /* Padding inside the preview div */
-            font-family: sans-serif; /* Readable font */
-            color: #333; /* Dark gray text color */
-            pointer-events: auto; /* IMPORTANT: Allow mouse events on the div itself */
-            display: flex;
-            flex-direction: column;
-        `;
+                    position: fixed; /* Position relative to the viewport */
+                    border: 1px solid #ccc; /* Simple border */
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.25); /* Soft shadow for depth */
+                    border-radius: 8px; /* Rounded corners */
+                    overflow: hidden; /* Hide scrollbars for the main div */
+                    z-index: 99999; /* Ensure it's on top of most page content */
+                    width: ${PREVIEW_WIDTH};
+                    max-height: ${MAX_PREVIEW_HEIGHT}; /* Set max height for scroll */
+                    background-color: white; /* Background color for the preview div */
+                    opacity: 0; /* Start with opacity 0 for a fade-in effect */
+                    transition: opacity 0.2s ease-in-out; /* Smooth transition for opacity changes */
+                    padding: 10px; /* Padding inside the preview div */
+                    font-family: sans-serif; /* Readable font */
+                    color: #333; /* Dark gray text color */
+                    pointer-events: auto; /* IMPORTANT: Allow mouse events on the div itself */
+                    display: flex;
+                    flex-direction: column;
+                `;
                 document.body.appendChild(previewDiv);
 
-                // Add event listeners directly to the preview div to keep it open when hovered
                 previewDiv.addEventListener('mouseover', () => {
-                    clearTimeout(hideTimer); // Clear hide timer if mouse enters the preview div
+                    clearTimeout(hideTimer);
                 });
+
                 previewDiv.addEventListener('mouseout', () => {
-                    // Start hide timer when mouse leaves the preview div
                     hideTimer = setTimeout(removePreviewDiv, DEBOUNCE_DELAY);
                 });
 
-                // Set the pre-rendered HTML content
+                // Prepare the previewDiv in advance, to show on hover.
                 previewDiv.innerHTML = contentHtml;
-
-                // Position the div based on link's bounding rect
                 positionPreviewDiv(linkRect);
 
                 // Use a small timeout to trigger the CSS transition for fade-in.
@@ -631,9 +593,6 @@
                 }, 10);
             }
 
-            /**
-     * Removes the preview div from the DOM with a fade-out effect.
-     */
             function removePreviewDiv() {
                 if (previewDiv) {
                     previewDiv.style.opacity = '0'; // Start fade-out
@@ -651,11 +610,6 @@
                 }
             }
 
-            /**
-     * Positions the preview div relative to the hovered link's bounding box,
-     * ensuring it stays within the viewport.
-     * @param {DOMRect} linkRect The bounding rectangle of the hovered link.
-     */
             function positionPreviewDiv(linkRect) {
                 if (!previewDiv) return;
 
@@ -690,12 +644,6 @@
                 previewDiv.style.top = `${Math.max(0, top)}px`;
             }
 
-            // --- Event Handlers for Individual Links ---
-
-            /**
-     * Handles the 'mouseover' event on a specific link element.
-     * @param {MouseEvent} event The mouse event object.
-     */
             function handleLinkMouseOver(event) {
                 const linkElement = event.currentTarget; // The link element itself
                 const contentHtml = linkElement.dataset.jiraPreviewHtml;
@@ -721,10 +669,6 @@
                 }, DEBOUNCE_DELAY);
             }
 
-            /**
-     * Handles the 'mouseout' event on a specific link element.
-     * @param {MouseEvent} event The mouse event object.
-     */
             function handleLinkMouseOut(event) {
                 clearTimeout(hoverTimer);
 
@@ -739,15 +683,7 @@
                 }, DEBOUNCE_DELAY);
             }
 
-            // --- Public Initialization Function ---
-
-            /**
-     * Initializes the Jira link preview for a given <a> HTML element.
-     * This function should be called once per link when the page is ready.
-     * It fetches the Jira issue data, renders the HTML, and attaches event listeners.
-     * @param {HTMLElement} linkElement The <a> HTML element to enable the preview for.
-     */
-            window.initializeJiraLinkPreview = function(linkElement) {
+            function initializeJiraLinkPreview(linkElement) {
                 if (!linkElement || !linkElement.href) {
                     console.error('[Link Preview] Invalid linkElement provided to initializeJiraLinkPreview.');
                     return;
@@ -770,10 +706,6 @@
                     return;
                 }
                 linkElement.dataset.jiraPreviewInitialized = 'true'; // Mark as initialized
-
-                // Add a temporary loading indicator to the link itself (optional, for UX)
-                // linkElement.style.cursor = 'wait'; // Example: change cursor to indicate loading
-
                 console.log(`[Link Preview] Initializing for link: ${url}, fetching from: ${apiUrl}`);
 
                 GM.xmlHttpRequest({
@@ -795,29 +727,11 @@
                                 renderedHtml = renderIssueDetails(issueData, url); // Pass original URL for link in preview
                                 console.log(`[Link Preview] Successfully fetched and rendered for ${issueId}.`);
                             } catch (e) {
-                                renderedHtml = `
-                            <h3 style="margin-top: 0; margin-bottom: 10px; font-size: 1.1em; border-bottom: 1px solid #eee; padding-bottom: 5px;">Preview: <a href="${url}" target="_blank" style="font-size: 0.9em; text-decoration: none; color: #007bff;">${issueId}</a></h3>
-                            <p style="color: red; text-align: center; margin-top: 20px;">Error parsing JSON response.</p>
-                            <details style="font-size: 0.8em; cursor: pointer;">
-                                <summary>View Raw JSON (first 1000 chars)</summary>
-                                <pre style="white-space: pre-wrap; word-break: break-all; background-color: #f9f9f9; padding: 5px; border-radius: 4px;">${response.responseText.substring(0, 1000)}...</pre>
-                            </details>
-                        `;
+                                renderedHtml = `Cannot fetch Jira issue details. Make sure you're signed in.`;
                                 console.error('[Link Preview] Error parsing JSON for ' + issueId + ':', e);
                             }
                         } else {
-                            renderedHtml = `
-                        <p style="color: red; text-align: center; margin-top: 50px;">
-                            Failed to load Jira issue for ${issueId}. Status: ${response.status}.
-                        </p>
-                        <p style="text-align: center; font-size: 0.9em;">
-                            This often indicates an authentication issue (not logged in) or server-side blocking.
-                        </p>
-                        <details style="font-size: 0.8em; cursor: pointer;">
-                            <summary>View Raw Response (first 1000 chars)</summary>
-                            <pre style="white-space: pre-wrap; word-break: break-all; background-color: #f9f9f9; padding: 5px; border-radius: 4px;">${response.responseText.substring(0, 1000)}...</pre>
-                        </details>
-                    `;
+                            renderedHtml = `Cannot fetch Jira issue details. Make sure you're signed in.`;
                             console.error(`[Link Preview] Failed to fetch for ${issueId}. Status: ${response.status}`);
                         }
                         // Store the rendered HTML on the link element
@@ -828,8 +742,7 @@
                         linkElement.addEventListener('mouseout', handleLinkMouseOut);
                     },
                     onerror: function(error) {
-                        // linkElement.style.cursor = ''; // Remove loading indicator
-                        const renderedHtml = `<p style="color: red; text-align: center; margin-top: 50px;">Error fetching content for ${issueId}: ${error.statusText || 'Network error'}.</p>`;
+                        const renderedHtml = `Cannot fetch Jira issue details. Make sure you're signed in.`;
                         linkElement.dataset.jiraPreviewHtml = renderedHtml;
                         console.error('[Link Preview] Network error fetching content for ' + issueId + ':', error);
 
@@ -842,13 +755,12 @@
 
             // No global initialization needed here, as the user will call initializeJiraLinkPreview
             // for specific links.
-            waitForElement('.reviewable-page').then((element) => {
+            waitForElement('#field_bugs_closed').then((element) => {
                 let bugsClosed = element.querySelectorAll('a.bug');
                 for (const bug of bugsClosed) {
                     initializeJiraLinkPreview(bug);
                 }
             });
-
         }
 
         function activateShowExtraLinks() {
@@ -1004,12 +916,7 @@
         }
 
         if (gmSettings.getFieldValue('showJiraPreviews')) {
-            waitForElement('#field_bugs_closed').then((element) => {
-                const bugsClosed = element.querySelectorAll('a.bug');
-                for (const bug of bugsClosed) {
-                    initializeJiraLinkPreview(bug);
-                }
-            });
+            activateJiraPreviews();
         }
     }
 
