@@ -1,20 +1,20 @@
 // ==UserScript==
 // @name         Better RBCommons
 // @namespace    piyushsoni
-// @version      2.7.5
+// @version      2.7.6
 // @description  Add some useful little features to RBCommons.com website to work around its common annoyances.
 // @author       Piyush Soni
 // @match        https://www.rbcommons.com/*
 // @match        https://rbcommons.com/s/*
-// @icon         https://raw.githubusercontent.com/onshape/onshape-dev-tools/ac105ffe082cbeb1d657778731f44838083e4fe9/better-rbcommons/better-rbcommons-extension/icons/better-rbcommons-icon.png?token=GHSAT0AAAAAADICSNSS66SOQHTOSSESYRCA2EKQRSA
-// @require      https://raw.githubusercontent.com/onshape/onshape-dev-tools/ac105ffe082cbeb1d657778731f44838083e4fe9/better-rbcommons/better-rbcommons-extension/src/utils.js?token=GHSAT0AAAAAADICSNSTUSOJ5IZBKZK3NEVS2EKT3CA
-// @require      https://raw.githubusercontent.com/onshape/onshape-dev-tools/ac105ffe082cbeb1d657778731f44838083e4fe9/better-rbcommons/better-rbcommons-extension/src/userscript-config.js?token=GHSAT0AAAAAADICSNSSKLJF5B2AUGVD7BTI2EKT2KA
-// @resource     Github-icon.png https://raw.githubusercontent.com/onshape/onshape-dev-tools/ac105ffe082cbeb1d657778731f44838083e4fe9/better-rbcommons/better-rbcommons-extension/resources/Github-icon.png?token=GHSAT0AAAAAADICSNST6ZR3LZYDKIGXWVIM2EKQRVA
-// @resource     VSCode-icon.png https://raw.githubusercontent.com/onshape/onshape-dev-tools/ac105ffe082cbeb1d657778731f44838083e4fe9/better-rbcommons/better-rbcommons-extension/resources/VSCode-icon.png?token=GHSAT0AAAAAADICSNSTPMKX5QGIMUHNNIQE2EKQR2A
-// @resource     IntelliJ_IDEA_Icon.svg https://raw.githubusercontent.com/onshape/onshape-dev-tools/ac105ffe082cbeb1d657778731f44838083e4fe9/better-rbcommons/better-rbcommons-extension/resources/IntelliJ_IDEA_Icon.svg?token=GHSAT0AAAAAADICSNSTBZROTU4KUZFSGE5S2EKRGUA
-// @resource     PyCharm_Icon.svg https://raw.githubusercontent.com/onshape/onshape-dev-tools/ac105ffe082cbeb1d657778731f44838083e4fe9/better-rbcommons/better-rbcommons-extension/resources/PyCharm_Icon.svg?token=GHSAT0AAAAAADICSNSTBZROTU4KUZFSGE5S2EKRGUA
-// @resource     WebStorm_Icon.svg https://raw.githubusercontent.com/onshape/onshape-dev-tools/ac105ffe082cbeb1d657778731f44838083e4fe9/better-rbcommons/better-rbcommons-extension/resources/WebStorm_Icon.svg?token=GHSAT0AAAAAADICSNSTBZROTU4KUZFSGE5S2EKRGUA
-// @resource     config-style https://raw.githubusercontent.com/onshape/onshape-dev-tools/ac105ffe082cbeb1d657778731f44838083e4fe9/better-rbcommons/better-rbcommons-extension/resources/userscript-config-style.css?token=GHSAT0AAAAAADICSNSTA6EKDVFNIZOEJ3GG2EKQTEQ
+// @icon         https://raw.githubusercontent.com/pisoni-onshape/better-rbcommons/236c73c706beea77bb1b2c8427400fd698fea52c/icons/better-rbcommons-icon.png
+// @require      https://raw.githubusercontent.com/pisoni-onshape/better-rbcommons/236c73c706beea77bb1b2c8427400fd698fea52c/src/utils.js
+// @require      https://raw.githubusercontent.com/pisoni-onshape/better-rbcommons/236c73c706beea77bb1b2c8427400fd698fea52c/src/userscript-config.js
+// @resource     Github-icon.png https://raw.githubusercontent.com/pisoni-onshape/better-rbcommons/236c73c706beea77bb1b2c8427400fd698fea52c/resources/Github-icon.png
+// @resource     VSCode-icon.png https://raw.githubusercontent.com/pisoni-onshape/better-rbcommons/236c73c706beea77bb1b2c8427400fd698fea52c/resources/VSCode-icon.png
+// @resource     IntelliJ_IDEA_Icon.svg https://raw.githubusercontent.com/pisoni-onshape/better-rbcommons/236c73c706beea77bb1b2c8427400fd698fea52c/resources/IntelliJ_IDEA_Icon.svg
+// @resource     PyCharm_Icon.svg https://raw.githubusercontent.com/pisoni-onshape/better-rbcommons/236c73c706beea77bb1b2c8427400fd698fea52c/resources/PyCharm_Icon.svg
+// @resource     WebStorm_Icon.svg https://raw.githubusercontent.com/pisoni-onshape/better-rbcommons/236c73c706beea77bb1b2c8427400fd698fea52c/resources/WebStorm_Icon.svg
+// @resource     config-style https://raw.githubusercontent.com/pisoni-onshape/better-rbcommons/236c73c706beea77bb1b2c8427400fd698fea52c/resources/userscript-config-style.css
 // @grant        GM_getValue
 // @grant        GM_setValue
 // @grant        GM_addStyle
